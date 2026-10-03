@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>СЛОИ - Крафтовые десерты</title>
+    <!-- Подключение Telegram Web App API -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); margin: 0; padding: 0; padding-bottom: 80px; }
+        .header { padding: 16px; text-align: center; border-bottom: 1px solid #eee; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px; }
+        .header p { margin: 4px 0 0 0; font-size: 14px; color: #888; }
+        .catalog { padding: 16px; display: grid; gap: 16px; }
+        
+        /* Жесткая фиксация цветов через !important */
+        .product-card { background: #f9f9f9 !important; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; color: #000000 !important; }
+        .product-info h3 { margin: 0 0 4px 0; font-size: 16px; color: #000000 !important; }
+        .product-info p { margin: 0; font-size: 14px; font-weight: 600; color: #555555 !important; }
+        
+        .add-btn { background: var(--tg-theme-button-color, #007aff); color: var(--tg-theme-button-text-color, #fff); border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        
+        #checkout-screen { display: none; padding: 16px; }
+        .input-group { margin-bottom: 12px; }
+        .input-group input { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); }
+        .row { display: flex; gap: 8px; }
+        
+        .floating-cart { position: fixed; bottom: 16px; left: 16px; right: 16px; background: var(--tg-theme-button-color, #007aff); color: var(--tg-theme-button-text-color, #fff); text-align: center; padding: 16px; border-radius: 12px; font-weight: bold; cursor: pointer; display: none; z-index: 100; }
+        .product-image { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; background-color: #ddd; }
+    </style>
+</head>
+<body>
+
+    <div id="main-screen">
+        <div class="header">
+            <h1>СЛОИ</h1>
+            <p>Доставка в ЖК Жулебино Парк: Суббота</p>
+        </div>
+        
+        <div class="catalog" id="products-container">
+            <!-- Карточки генерируются через JS -->
+        </div>
+    </div>
+
+    <div id="checkout-screen">
+        <div class="header">
+            <h1>Оформление</h1>
+            <p id="checkout-total">Сумма: 0 ₽</p>
+        </div>
+        
+        <div style="padding-top: 16px;">
+            <div class="input-group">
+                <input type="tel" id="phone" placeholder="Номер телефона" required>
+            </div>
+            <div class="input-group">
+                <input type="text" id="street" placeholder="Улица (например, Летчика Ларюшина)" required>
+            </div>
+            <div class="row">
+                <div class="input-group"><input type="text" id="house" placeholder="Дом" required></div>
+                <div class="input-group"><input type="number" id="entrance" placeholder="Подъезд" required></div>
+            </div>
+            <div class="row">
+                <div class="input-group"><input type="number" id="floor" placeholder="Этаж" required></div>
+                <div class="input-group"><input type="number" id="flat" placeholder="Квартира" required></div>
+            </div>
+            <div class="input-group">
+                <input type="text" id="comment" placeholder="Комментарий курьеру (необязательно)">
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-cart" id="floating-cart" onclick="goToCheckout()">
+        Перейти к оформлению (<span id="cart-sum">0</span> ₽) ➔
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Подготовлены слоты img под прямые ссылки на ваши фотографии
+        const products = [
+            { id: 1, name: "Трайфл «Банан-Клубника»", price: 1500, img: "https://placehold.co/100x100/eee/999?text=Фото" },
+            { id: 2, name: "Трайфл «Вишня с шоколадом»", price: 1500, img: "https://placehold.co/100x100/eee/999?text=Фото" },
+            { id: 3, name: "Трайфл «Клубника»", price: 1500, img: "https://placehold.co/100x100/eee/999?text=Фото" }
+        ];
+
+        let cart = {};
+
+        function renderProducts() {
+            const container = document.getElementById('products-container');
+            products.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <img src="${p.img}" class="product-image" alt="${p.name}">
+                        <div class="product-info">
+                            <h3>${p.name}</h3>
+                            <p>${p.price} ₽</p>
+                        </div>
+                    </div>
+                    <button class="add-btn" onclick="addToCart(${p.id})">Добавить</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addToCart(productId) {
+            if (!cart[productId]) cart[productId] = 0;
+            cart[productId]++;
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            let total = 0;
+            for (let id in cart) {
+                const product = products.find(p => p.id == id);
+                total += product.price * cart[id];
+            }
+            
+            const cartBtn = document.getElementById('floating-cart');
+            if (total > 0) {
+                cartBtn.style.display = 'block';
+                document.getElementById('cart-sum').innerText = total;
+            } else {
+                cartBtn.style.display = 'none';
+            }
+            
+            if (document.getElementById('checkout-screen').style.display === 'block') {
+                tg.MainButton.setText(`Оформить (оплата при получении)`);
+                tg.MainButton.show();
+            }
+        }
+
+        function goToCheckout() {
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('floating-cart').style.display = 'none';
+            document.getElementById('checkout-screen').style.display = 'block';
+            
+            let total = document.getElementById('cart-sum').innerText;
+            document.getElementById('checkout-total').innerText = `Сумма: ${total} ₽`;
+            
+            tg.MainButton.setText(`Оформить (${total} ₽)`);
+            tg.MainButton.show();
+            
+            tg.MainButton.onClick(sendDataToBot);
+        }
+
+        function sendDataToBot() {
+            const address = {
+                street: document.getElementById('street').value,
+                house: document.getElementById('house').value,
+                entrance: document.getElementById('entrance').value,
+                floor: document.getElementById('floor').value,
+                flat: document.getElementById('flat').value,
+                comment: document.getElementById('comment').value
+            };
+            
+            const phone = document.getElementById('phone').value;
+
+            let cartData = [];
+            let totalPrice = 0;
+            for (let id in cart) {
+                if (cart[id] > 0) {
+                    const p = products.find(p => p.id == id);
+                    cartData.push({ id: p.id, name: p.name, quantity: cart[id], price: p.price });
+                    totalPrice += p.price * cart[id];
+                }
+            }
+
+            const payload = {
+                cart: cartData,
+                totalPrice: totalPrice,
+                address: address,
+                phone: phone
+            };
+
+            tg.sendData(JSON.stringify(payload));
+        }
+
+        renderProducts();
+    </script>
+</body>
+</html>
