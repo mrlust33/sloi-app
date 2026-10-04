@@ -4,31 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>СЛОИ - Крафтовые десерты</title>
+    <!-- Подключение Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); margin: 0; padding: 0; padding-bottom: 80px; }
-        .header { padding: 16px; text-align: center; border-bottom: 1px solid #eee; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px; }
-        .header p { margin: 4px 0 0 0; font-size: 14px; color: #888; }
-        .catalog { padding: 16px; display: grid; gap: 16px; }
+        /* Базовый сброс и премиум-шрифт */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Roboto, sans-serif; 
+            background-color: #f2f2f7 !important; /* iOS-серый для контраста с карточками */
+            color: #000000 !important; 
+            margin: 0; padding: 0; padding-bottom: 120px; 
+            -webkit-tap-highlight-color: transparent;
+        }
         
-        .product-card { background: #f9f9f9 !important; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; color: #000000 !important; }
-        .product-info h3 { margin: 0 0 4px 0; font-size: 16px; color: #000000 !important; }
-        .product-info p { margin: 0; font-size: 14px; font-weight: 600; color: #555555 !important; }
+        /* Шапка */
+        .header { padding: 24px 16px; text-align: center; }
+        .header h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -1px; text-transform: uppercase; color: #000000 !important; }
+        .header p { margin: 6px 0 0 0; font-size: 15px; font-weight: 600; color: #8e8e93 !important; }
         
-        .add-btn { background: var(--tg-theme-button-color, #007aff); color: var(--tg-theme-button-text-color, #fff); border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        /* Сетка каталога */
+        .catalog { padding: 0 16px; display: flex; flex-direction: column; gap: 24px; }
         
-        #checkout-screen { display: none; padding: 16px; }
+        /* Новые премиум-карточки (Edge-to-edge визуал) */
+        .product-card { 
+            background: #ffffff !important; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            transform: translateZ(0); /* Аппаратное ускорение */
+        }
+        .product-image { 
+            width: 100%; 
+            height: 300px; 
+            object-fit: cover; 
+            display: block; 
+            background-color: #eeeeee;
+        }
+        .product-info-wrap { 
+            padding: 16px 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .product-info h3 { margin: 0 0 4px 0; font-size: 18px; font-weight: 700; color: #000000 !important; }
+        .product-info p { margin: 0; font-size: 15px; font-weight: 700; color: #8e8e93 !important; }
+        
+        /* Тактильная кнопка добавления */
+        .add-btn { 
+            background: #000000 !important; 
+            color: #ffffff !important; 
+            border: none; 
+            padding: 10px 24px; 
+            border-radius: 100px; 
+            font-size: 15px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: transform 0.15s ease;
+        }
+        .add-btn:active { transform: scale(0.92); } /* Эффект сжатия при клике */
+        
+        /* Glassmorphism Корзина */
+        .floating-cart { 
+            position: fixed; 
+            bottom: 24px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            background: rgba(0, 0, 0, 0.8) !important; 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            color: #ffffff !important; 
+            text-align: center; 
+            padding: 18px; 
+            border-radius: 100px; 
+            font-size: 16px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            display: none; 
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.15s ease;
+        }
+        .floating-cart:active { transform: translate(-50%, 2px) scale(0.97); }
+
+        /* Темная подложка под шторку */
+        .overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 150;
+        }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        /* Плавная выезжающая шторка оформления (Bottom Sheet) */
+        #checkout-screen { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: #ffffff !important; 
+            height: 85vh;
+            border-radius: 28px 28px 0 0; 
+            padding: 24px 20px; 
+            box-sizing: border-box;
+            transform: translateY(100%); /* Скрыто внизу */
+            transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.2, 1);
+            z-index: 200;
+            overflow-y: auto;
+        }
+        #checkout-screen.active { transform: translateY(0); /* Выезд вверх */ }
+
+        .drag-handle { width: 40px; height: 5px; background: #e5e5ea; border-radius: 3px; margin: 0 auto 20px auto; }
+        
+        .checkout-header { text-align: center; margin-bottom: 24px; }
+        .checkout-header h1 { margin: 0; font-size: 24px; font-weight: 800; color: #000 !important;}
+        .checkout-header p { margin: 4px 0 0; font-size: 16px; font-weight: 600; color: #000 !important; }
+
+        /* Поля ввода в стиле iOS */
         .input-group { margin-bottom: 12px; }
-        .input-group input { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); }
-        .row { display: flex; gap: 8px; }
-        
-        .floating-cart { position: fixed; bottom: 16px; left: 16px; right: 16px; background: var(--tg-theme-button-color, #007aff); color: var(--tg-theme-button-text-color, #fff); text-align: center; padding: 16px; border-radius: 12px; font-weight: bold; cursor: pointer; display: none; z-index: 100; }
-        .product-image { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; background-color: #eee; flex-shrink: 0; }
+        .input-group input { 
+            width: 100%; padding: 16px; box-sizing: border-box; 
+            border: none; border-radius: 14px; font-size: 16px; font-weight: 500;
+            background: #f2f2f7 !important; color: #000000 !important; 
+            outline: none; transition: background 0.2s;
+        }
+        .input-group input:focus { background: #e5e5ea !important; }
+        .input-group input::placeholder { color: #8e8e93; }
+        .row { display: flex; gap: 12px; }
     </style>
 </head>
 <body>
 
+    <!-- Главная витрина -->
     <div id="main-screen">
         <div class="header">
             <h1>СЛОИ</h1>
@@ -36,45 +140,50 @@
         </div>
         
         <div class="catalog" id="products-container">
-            <!-- Карточки генерируются через JS -->
+            <!-- Карточки генерируются скриптом -->
         </div>
     </div>
 
+    <!-- Затемнение фона -->
+    <div class="overlay" id="overlay" onclick="closeCheckout()"></div>
+
+    <!-- Выезжающая шторка -->
     <div id="checkout-screen">
-        <div class="header">
+        <div class="drag-handle"></div>
+        <div class="checkout-header">
             <h1>Оформление</h1>
             <p id="checkout-total">Сумма: 0 ₽</p>
         </div>
         
-        <div style="padding-top: 16px;">
-            <div class="input-group">
-                <input type="tel" id="phone" placeholder="Номер телефона" required>
-            </div>
-            <div class="input-group">
-                <input type="text" id="street" placeholder="Улица (например, Летчика Ларюшина)" required>
-            </div>
-            <div class="row">
-                <div class="input-group"><input type="text" id="house" placeholder="Дом" required></div>
-                <div class="input-group"><input type="number" id="entrance" placeholder="Подъезд" required></div>
-            </div>
-            <div class="row">
-                <div class="input-group"><input type="number" id="floor" placeholder="Этаж" required></div>
-                <div class="input-group"><input type="number" id="flat" placeholder="Квартира" required></div>
-            </div>
-            <div class="input-group">
-                <input type="text" id="comment" placeholder="Комментарий курьеру (необязательно)">
-            </div>
+        <div class="input-group">
+            <input type="tel" id="phone" placeholder="Номер телефона" required>
+        </div>
+        <div class="input-group">
+            <input type="text" id="street" placeholder="Улица (например, Летчика Ларюшина)" required>
+        </div>
+        <div class="row">
+            <div class="input-group"><input type="text" id="house" placeholder="Дом" required></div>
+            <div class="input-group"><input type="number" id="entrance" placeholder="Подъезд" required></div>
+        </div>
+        <div class="row">
+            <div class="input-group"><input type="number" id="floor" placeholder="Этаж" required></div>
+            <div class="input-group"><input type="number" id="flat" placeholder="Квартира" required></div>
+        </div>
+        <div class="input-group">
+            <input type="text" id="comment" placeholder="Комментарий курьеру">
         </div>
     </div>
 
+    <!-- Кнопка Корзины -->
     <div class="floating-cart" id="floating-cart" onclick="goToCheckout()">
-        Перейти к оформлению (<span id="cart-sum">0</span> ₽) ➔
+        Оформить (<span id="cart-sum">0</span> ₽)
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Ссылки на фото остаются прежними, они уже загружены у тебя на GitHub
         const products = [
             { id: 1, name: "Трайфл «Банан-Клубника»", price: 1500, img: "banan.jpg" },
             { id: 2, name: "Трайфл «Вишня с шоколадом»", price: 1500, img: "vishny.jpg" },
@@ -89,14 +198,14 @@
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 card.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <img src="${p.img}" class="product-image" alt="${p.name}">
+                    <img src="${p.img}" class="product-image" alt="${p.name}">
+                    <div class="product-info-wrap">
                         <div class="product-info">
                             <h3>${p.name}</h3>
                             <p>${p.price} ₽</p>
                         </div>
+                        <button class="add-btn" onclick="addToCart(${p.id})">В корзину</button>
                     </div>
-                    <button class="add-btn" onclick="addToCart(${p.id})">Добавить</button>
                 `;
                 container.appendChild(card);
             });
@@ -105,6 +214,10 @@
         function addToCart(productId) {
             if (!cart[productId]) cart[productId] = 0;
             cart[productId]++;
+            
+            // Легкая вибрация телефона (Haptic Feedback) для кайфа от клика
+            tg.HapticFeedback.impactOccurred('light'); 
+            
             updateCartUI();
         }
 
@@ -123,24 +236,39 @@
                 cartBtn.style.display = 'none';
             }
             
-            if (document.getElementById('checkout-screen').style.display === 'block') {
-                tg.MainButton.setText(`Оформить (оплата при получении)`);
+            if (document.getElementById('checkout-screen').classList.contains('active')) {
+                tg.MainButton.setText(`Оплатить при получении`);
                 tg.MainButton.show();
             }
         }
 
         function goToCheckout() {
-            document.getElementById('main-screen').style.display = 'none';
+            // Плавный выезд шторки
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('checkout-screen').classList.add('active');
+            
+            // Скрываем черную кнопку корзины, чтобы не мешала
             document.getElementById('floating-cart').style.display = 'none';
-            document.getElementById('checkout-screen').style.display = 'block';
             
             let total = document.getElementById('cart-sum').innerText;
             document.getElementById('checkout-total').innerText = `Сумма: ${total} ₽`;
             
+            // Показываем нативную кнопку Telegram
             tg.MainButton.setText(`Оформить (${total} ₽)`);
+            tg.MainButton.color = "#000000"; // Делаем нативную кнопку черной
             tg.MainButton.show();
             
             tg.MainButton.onClick(sendDataToBot);
+        }
+
+        function closeCheckout() {
+            // Закрытие шторки при клике на темный фон
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('checkout-screen').classList.remove('active');
+            
+            // Возвращаем корзину и прячем нативную кнопку
+            updateCartUI();
+            tg.MainButton.hide();
         }
 
         function sendDataToBot() {
