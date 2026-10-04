@@ -8,8 +8,8 @@
     <!-- Подключение Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <!-- Подключение библиотеки анимаций Motion One -->
-    <script src="https://cdn.jsdelivr.net/npm/motion@10.16.2/dist/motion.global.js"></script>
+    <!-- Перешли на Animate.css для надежности в Telegram -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <style>
         /* Базовый сброс и премиум-шрифт */
@@ -21,22 +21,21 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Шапка (изначально скрыта для анимации) */
-        .header { opacity: 0; padding: 24px 16px; text-align: center; }
+        /* Шапка */
+        .header { padding: 24px 16px; text-align: center; }
         .header h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -1px; text-transform: uppercase; color: #000000 !important; }
         .header p { margin: 6px 0 0 0; font-size: 15px; font-weight: 600; color: #8e8e93 !important; }
         
         /* Сетка каталога */
         .catalog { padding: 0 16px; display: flex; flex-direction: column; gap: 24px; }
         
-        /* Новые премиум-карточки (изначально скрыты для анимации) */
+        /* Новые премиум-карточки (opacity: 0 убрали, анимация управляется классами) */
         .product-card { 
             background: #ffffff !important; 
             border-radius: 20px; 
             overflow: hidden; 
             box-shadow: 0 8px 24px rgba(0,0,0,0.06);
             transform: translateZ(0); 
-            opacity: 0; 
         }
         .product-image { 
             width: 100%; 
@@ -140,7 +139,7 @@
 
     <!-- Главная витрина -->
     <div id="main-screen">
-        <div class="header">
+        <div class="header animate__animated animate__fadeInDown">
             <h1>СЛОИ</h1>
             <p>Доставка в ЖК Жулебино Парк: Суббота</p>
         </div>
@@ -199,9 +198,12 @@
 
         function renderProducts() {
             const container = document.getElementById('products-container');
-            products.forEach(p => {
+            products.forEach((p, index) => {
                 const card = document.createElement('div');
-                card.className = 'product-card';
+                // Добавили классы Animate.css и inline-задержку для эффекта каскада
+                card.className = 'product-card animate__animated animate__fadeInUp';
+                card.style.animationDelay = `${index * 0.15}s`;
+                
                 card.innerHTML = `
                     <img src="${p.img}" class="product-image" alt="${p.name}">
                     <div class="product-info-wrap">
@@ -214,21 +216,6 @@
                 `;
                 container.appendChild(card);
             });
-
-            // --- ЗАПУСК АНИМАЦИЙ ПРИ ЗАГРУЗКЕ ---
-            const { animate, stagger } = Motion;
-            
-            // 1. Шапка плавно выезжает сверху
-            animate(".header", 
-                { opacity: [0, 1], y: [-30, 0] }, 
-                { duration: 0.6, easing: "ease-out" }
-            );
-
-            // 2. Карточки каскадом выплывают снизу
-            animate(".product-card", 
-                { opacity: [0, 1], y: [40, 0] }, 
-                { delay: stagger(0.12, { start: 0.1 }), duration: 0.6, easing: "ease-out" }
-            );
         }
 
         function addToCart(productId) {
@@ -250,6 +237,11 @@
             const cartBtn = document.getElementById('floating-cart');
             if (total > 0) {
                 cartBtn.style.display = 'block';
+                // Добавляем микро-анимацию при обновлении суммы
+                cartBtn.classList.remove('animate__animated', 'animate__headShake');
+                void cartBtn.offsetWidth; // Сброс анимации
+                cartBtn.classList.add('animate__animated', 'animate__headShake');
+                
                 document.getElementById('cart-sum').innerText = total;
             } else {
                 cartBtn.style.display = 'none';
@@ -315,7 +307,7 @@
             tg.sendData(JSON.stringify(payload));
         }
 
-        // Запуск генерации и анимации
+        // Запуск генерации
         renderProducts();
     </script>
 </body>
