@@ -4,33 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>СЛОИ - Крафтовые десерты</title>
+    
     <!-- Подключение Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Подключение библиотеки анимаций Motion One -->
+    <script src="https://cdn.jsdelivr.net/npm/motion@10.16.2/dist/motion.global.js"></script>
+    
     <style>
         /* Базовый сброс и премиум-шрифт */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Roboto, sans-serif; 
-            background-color: #f2f2f7 !important; /* iOS-серый для контраста с карточками */
+            background-color: #f2f2f7 !important; 
             color: #000000 !important; 
             margin: 0; padding: 0; padding-bottom: 120px; 
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Шапка */
-        .header { padding: 24px 16px; text-align: center; }
+        /* Шапка (изначально скрыта для анимации) */
+        .header { opacity: 0; padding: 24px 16px; text-align: center; }
         .header h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -1px; text-transform: uppercase; color: #000000 !important; }
         .header p { margin: 6px 0 0 0; font-size: 15px; font-weight: 600; color: #8e8e93 !important; }
         
         /* Сетка каталога */
         .catalog { padding: 0 16px; display: flex; flex-direction: column; gap: 24px; }
         
-        /* Новые премиум-карточки (Edge-to-edge визуал) */
+        /* Новые премиум-карточки (изначально скрыты для анимации) */
         .product-card { 
             background: #ffffff !important; 
             border-radius: 20px; 
             overflow: hidden; 
             box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-            transform: translateZ(0); /* Аппаратное ускорение */
+            transform: translateZ(0); 
+            opacity: 0; 
         }
         .product-image { 
             width: 100%; 
@@ -60,7 +66,7 @@
             cursor: pointer; 
             transition: transform 0.15s ease;
         }
-        .add-btn:active { transform: scale(0.92); } /* Эффект сжатия при клике */
+        .add-btn:active { transform: scale(0.92); } 
         
         /* Glassmorphism Корзина */
         .floating-cart { 
@@ -104,12 +110,12 @@
             border-radius: 28px 28px 0 0; 
             padding: 24px 20px; 
             box-sizing: border-box;
-            transform: translateY(100%); /* Скрыто внизу */
+            transform: translateY(100%); 
             transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.2, 1);
             z-index: 200;
             overflow-y: auto;
         }
-        #checkout-screen.active { transform: translateY(0); /* Выезд вверх */ }
+        #checkout-screen.active { transform: translateY(0); }
 
         .drag-handle { width: 40px; height: 5px; background: #e5e5ea; border-radius: 3px; margin: 0 auto 20px auto; }
         
@@ -183,7 +189,6 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Ссылки на фото остаются прежними, они уже загружены у тебя на GitHub
         const products = [
             { id: 1, name: "Трайфл «Банан-Клубника»", price: 1500, img: "banan.jpg" },
             { id: 2, name: "Трайфл «Вишня с шоколадом»", price: 1500, img: "vishny.jpg" },
@@ -209,13 +214,27 @@
                 `;
                 container.appendChild(card);
             });
+
+            // --- ЗАПУСК АНИМАЦИЙ ПРИ ЗАГРУЗКЕ ---
+            const { animate, stagger } = Motion;
+            
+            // 1. Шапка плавно выезжает сверху
+            animate(".header", 
+                { opacity: [0, 1], y: [-30, 0] }, 
+                { duration: 0.6, easing: "ease-out" }
+            );
+
+            // 2. Карточки каскадом выплывают снизу
+            animate(".product-card", 
+                { opacity: [0, 1], y: [40, 0] }, 
+                { delay: stagger(0.12, { start: 0.1 }), duration: 0.6, easing: "ease-out" }
+            );
         }
 
         function addToCart(productId) {
             if (!cart[productId]) cart[productId] = 0;
             cart[productId]++;
             
-            // Легкая вибрация телефона (Haptic Feedback) для кайфа от клика
             tg.HapticFeedback.impactOccurred('light'); 
             
             updateCartUI();
@@ -243,30 +262,23 @@
         }
 
         function goToCheckout() {
-            // Плавный выезд шторки
             document.getElementById('overlay').classList.add('active');
             document.getElementById('checkout-screen').classList.add('active');
-            
-            // Скрываем черную кнопку корзины, чтобы не мешала
             document.getElementById('floating-cart').style.display = 'none';
             
             let total = document.getElementById('cart-sum').innerText;
             document.getElementById('checkout-total').innerText = `Сумма: ${total} ₽`;
             
-            // Показываем нативную кнопку Telegram
             tg.MainButton.setText(`Оформить (${total} ₽)`);
-            tg.MainButton.color = "#000000"; // Делаем нативную кнопку черной
+            tg.MainButton.color = "#000000"; 
             tg.MainButton.show();
             
             tg.MainButton.onClick(sendDataToBot);
         }
 
         function closeCheckout() {
-            // Закрытие шторки при клике на темный фон
             document.getElementById('overlay').classList.remove('active');
             document.getElementById('checkout-screen').classList.remove('active');
-            
-            // Возвращаем корзину и прячем нативную кнопку
             updateCartUI();
             tg.MainButton.hide();
         }
@@ -303,6 +315,7 @@
             tg.sendData(JSON.stringify(payload));
         }
 
+        // Запуск генерации и анимации
         renderProducts();
     </script>
 </body>
