@@ -8,30 +8,32 @@
     <!-- Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <!-- CDNs -->
+    <!-- CDNs Библиотек -->
     <script src="https://cdn.jsdelivr.net/npm/motion@10.16.2/dist/motion.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@3.3.0/tsparticles.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
     
     <style>
-        /* Базовый сброс и плавность фона */
+        /* Базовый сброс и плавность изменения фона */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Roboto, sans-serif; 
             margin: 0; padding: 0; 
             height: 100vh; overflow: hidden;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: background-color 0.8s ease-in-out;
+            transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             -webkit-tap-highlight-color: transparent;
+            user-select: none; /* Защита от выделения текста при свайпах */
         }
 
-        /* Контейнер для частиц на заднем плане */
+        /* Слой с падающими ягодами */
         #tsparticles {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1;
+            pointer-events: none; /* Чтобы не перекрывал свайпы */
         }
 
-        /* Обертка для контента поверх частиц */
+        /* Главный контейнер поверх фона */
         .app-container {
             position: relative;
             z-index: 10;
@@ -42,151 +44,162 @@
             align-items: center;
             padding: 20px;
             box-sizing: border-box;
+            height: 100%;
+            justify-content: center;
         }
 
-        /* Логотип */
+        /* Заголовок-логотип */
         .brand-header {
+            position: absolute;
+            top: 40px;
             font-size: 32px; font-weight: 800; letter-spacing: -1px;
-            color: rgba(255,255,255,0.9);
-            text-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
+            color: rgba(255,255,255,0.95);
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            text-transform: uppercase;
         }
 
-        /* Карточка товара с эффектом стекла (Glassmorphism) */
+        /* Контейнер карточки */
+        #card-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px; /* Глубина для 3D */
+        }
+
+        /* Glassmorphism Карточка */
         .product-card {
             width: 100%;
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 32px;
             padding: 20px;
             box-sizing: border-box;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-            transform-style: preserve-3d; /* Для Vanilla-Tilt */
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+            transform-style: preserve-3d;
             will-change: transform, opacity, filter;
+            cursor: pointer; /* Указатель, что карточка кликабельна */
         }
 
         .product-image {
             width: 100%;
-            height: 320px;
+            height: 340px;
             object-fit: cover;
-            border-radius: 18px;
-            transform: translateZ(30px); /* 3D вылет картинки */
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            transform: translateZ(40px); /* Вынос картинки вперед (параллакс) */
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            background-color: rgba(0,0,0,0.1);
         }
 
         .product-info {
             text-align: center;
-            margin-top: 20px;
-            transform: translateZ(20px);
+            margin-top: 24px;
+            transform: translateZ(30px); /* Вынос текста вперед */
         }
 
         .product-info h3 {
-            margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #fff;
+            margin: 0 0 8px 0; font-size: 24px; font-weight: 800; color: #ffffff;
             text-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
         .product-info p {
-            margin: 0; font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.9);
+            margin: 0; font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.85);
         }
 
         /* Премиум кнопка добавления */
         .add-btn {
             background: #ffffff; color: #000000;
-            border: none; padding: 14px 32px; border-radius: 100px;
+            border: none; padding: 16px 32px; border-radius: 100px;
             font-size: 16px; font-weight: 800; cursor: pointer;
-            margin-top: 20px; width: 100%;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
-            transform: translateZ(25px);
+            margin-top: 24px; width: 100%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            transform: translateZ(35px);
         }
-        .add-btn:active { transform: translateZ(25px) scale(0.95); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .add-btn:active { 
+            transform: translateZ(35px) scale(0.96); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
 
-        /* Навигация (переключатели вкусов) */
-        .nav-controls {
-            display: flex; gap: 16px; margin-top: 30px;
+        /* Индикаторы (точки) вместо уродливых стрелок */
+        .pagination {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            gap: 10px;
         }
-        .nav-btn {
-            background: rgba(255,255,255,0.3); backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.5); border-radius: 50%;
-            width: 50px; height: 50px;
-            display: flex; align-items: center; justify-content: center;
-            color: #fff; font-size: 24px; cursor: pointer;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            transition: transform 0.15s ease, background 0.3s;
+        .dot {
+            width: 8px; height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transition: all 0.3s ease;
         }
-        .nav-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.5); }
-
+        .dot.active {
+            width: 24px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Фон с дождем из ягод -->
+    <!-- Живой фон (Particles) -->
     <div id="tsparticles"></div>
 
-    <!-- Интерфейс -->
-    <div class="app-container">
+    <div class="app-container" id="swipe-zone">
         <div class="brand-header">СЛОИ</div>
         
-        <!-- Карточка генерируется здесь -->
-        <div id="card-wrapper" style="width: 100%;"></div>
+        <!-- Слот для карточек -->
+        <div id="card-wrapper"></div>
 
-        <!-- Кнопки свайпа/переключения -->
-        <div class="nav-controls">
-            <button class="nav-btn" onclick="prevFlavor()">❮</button>
-            <button class="nav-btn" onclick="nextFlavor()">❯</button>
+        <!-- Индикация текущего вкуса -->
+        <div class="pagination" id="pagination">
+            <div class="dot active"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
         </div>
     </div>
 
     <script>
+        // Инициализация Telegram Web App
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.disableVerticalSwipes(); // Блокируем свайпы телеги, чтобы не мешали нашему 3D
+        tg.disableVerticalSwipes(); // Блокируем закрытие шторки свайпом вниз для чистого UX
 
         const { animate } = Motion;
 
-        // База данных вкусов с привязанными цветами и эмодзи
+        // База вкусов
         const flavors = [
-            { id: 1, name: "Трайфл «Банан-Клубника»", price: 1500, img: "banan.jpg", bg: "#d97706", emojis: ["🍌", "🍓"] },
-            { id: 2, name: "Трайфл «Вишня с шоколадом»", price: 1500, img: "vishny.jpg", bg: "#4c0519", emojis: ["🍒", "🍫"] },
+            { id: 1, name: "Трайфл «Банан-Клубника»", price: 1500, img: "banan.jpg", bg: "#c2410c", emojis: ["🍌", "🍓"] },
+            { id: 2, name: "Трайфл «Вишня с шоколадом»", price: 1500, img: "vishny.jpg", bg: "#4c0519", emojis: ["🍒"] },
             { id: 3, name: "Трайфл «Клубника»", price: 1500, img: "klubnika.jpg", bg: "#be185d", emojis: ["🍓"] }
         ];
 
         let currentIndex = 0;
         let tsParticlesInstance = null;
+        let isAnimating = false; // Блокировка мульти-свайпов
 
-        // 1. Инициализация дождя эмодзи (tsParticles)
+        // Генерация дождя (tsParticles)
         async function loadParticles(emojis) {
             const config = {
                 fpsLimit: 60,
                 particles: {
-                    number: { value: 15, density: { enable: true, value_area: 800 } },
+                    number: { value: 20, density: { enable: true, value_area: 800 } },
                     shape: {
                         type: "char",
-                        character: { value: emojis, font: "Verdana", style: "", weight: "400", fill: true }
+                        character: { value: emojis, font: "Verdana", weight: "400", fill: true }
                     },
-                    size: { value: 25, random: true },
-                    move: {
-                        enable: true,
-                        speed: 3,
-                        direction: "bottom",
-                        random: false,
-                        straight: false,
-                        outModes: { default: "out" }
-                    },
-                    rotate: {
-                        value: { min: 0, max: 360 },
-                        direction: "random",
-                        animation: { enable: true, speed: 10 }
-                    },
-                    opacity: { value: 0.8 }
+                    size: { value: 28, random: true },
+                    move: { enable: true, speed: 2, direction: "bottom", random: true, straight: false, outModes: "out" },
+                    rotate: { value: { min: 0, max: 360 }, direction: "random", animation: { enable: true, speed: 15 } },
+                    opacity: { value: 0.6 }
                 },
                 detectRetina: true
             };
 
             if (tsParticlesInstance) {
-                // Если фон уже есть — мягко меняем эмодзи
                 tsParticlesInstance.options.particles.shape.character.value = emojis;
                 tsParticlesInstance.refresh();
             } else {
@@ -194,31 +207,32 @@
             }
         }
 
-        // 2. Рендер и 3D-анимация карточки (Motion One + Vanilla Tilt)
-        async function renderCard(direction = 1) {
+        // Рендер и кинематографичная смена карточки (Liquid Fluid Transition)
+        async function renderCard() {
+            if (isAnimating) return;
+            isAnimating = true;
+
             const flavor = flavors[currentIndex];
             const wrapper = document.getElementById("card-wrapper");
 
-            // Меняем цвет фона плавно
+            // Плавная смена фона
             document.body.style.backgroundColor = flavor.bg;
-            
-            // Запускаем дождь из новых ягод
             loadParticles(flavor.emojis);
+            updatePagination();
 
-            // Анимация ИСЧЕЗНОВЕНИЯ старой карточки (если она есть)
+            // Анимация ИСЧЕЗНОВЕНИЯ (Глубокий Fade + Zoom Out + CSS Blur)
             if (wrapper.children.length > 0) {
                 const oldCard = wrapper.children[0];
-                // Разрушаем старый Tilt, чтобы не жрал память
                 if (oldCard.vanillaTilt) oldCard.vanillaTilt.destroy();
                 
                 await animate(oldCard, 
-                    { opacity: 0, scale: 0.8, filter: "blur(15px)", x: direction * -50 }, 
-                    { duration: 0.3, easing: "ease-in" }
+                    { opacity: 0, scale: 0.85, filter: "blur(12px)" }, 
+                    { duration: 0.4, easing: "ease-in" }
                 ).finished;
                 wrapper.innerHTML = '';
             }
 
-            // Создаем новую карточку
+            // Создание новой карточки
             const card = document.createElement("div");
             card.className = "product-card";
             card.innerHTML = `
@@ -226,55 +240,81 @@
                 <div class="product-info">
                     <h3>${flavor.name}</h3>
                     <p>${flavor.price} ₽</p>
-                    <button class="add-btn" onclick="addToCart()">В корзину</button>
+                    <button class="add-btn" onclick="addToCart(event, ${flavor.id})">Добавить</button>
                 </div>
             `;
             
-            // Изначально скрываем новую карточку
             card.style.opacity = 0;
-            card.style.transform = `scale(0.8) translateX(${direction * 50}px)`;
-            card.style.filter = "blur(15px)";
+            card.style.transform = "scale(0.85)";
+            card.style.filter = "blur(12px)";
             wrapper.appendChild(card);
 
-            // Анимация ПОЯВЛЕНИЯ новой карточки (Motion One)
+            // Анимация ПОЯВЛЕНИЯ (Fade + Zoom In + Clear)
             await animate(card, 
-                { opacity: 1, scale: 1, filter: "blur(0px)", x: 0 }, 
-                { duration: 0.5, easing: [0.175, 0.885, 0.32, 1.275] } // Spring effect
+                { opacity: 1, scale: 1, filter: "blur(0px)" }, 
+                { duration: 0.5, easing: [0.175, 0.885, 0.32, 1.275] } // Spring-эффект
             ).finished;
 
-            // Накидываем сочный 3D-эффект на свежую карточку (Vanilla Tilt)
+            // 3D-наклон (Vanilla Tilt)
             VanillaTilt.init(card, {
-                max: 15,
-                speed: 400,
-                glare: true,
-                "max-glare": 0.3,
-                gyroscope: true // Реагирует на наклон самого смартфона
+                max: 15, speed: 400, glare: true, "max-glare": 0.25, gyroscope: true
+            });
+
+            isAnimating = false;
+        }
+
+        function updatePagination() {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                dot.className = index === currentIndex ? 'dot active' : 'dot';
             });
         }
 
-        // Логика переключения
-        function nextFlavor() {
-            tg.HapticFeedback.selectionChanged();
-            currentIndex = (currentIndex + 1) % flavors.length;
-            renderCard(1);
+        // Управление Свайпами (Touch Events)
+        let touchstartX = 0;
+        let touchendX = 0;
+        const swipeZone = document.getElementById('swipe-zone');
+
+        swipeZone.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        swipeZone.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            if (isAnimating) return;
+            const swipeThreshold = 50; // Минимальная длина свайпа
+            
+            if (touchendX < touchstartX - swipeThreshold) {
+                // Свайп влево (Следующий)
+                tg.HapticFeedback.selectionChanged();
+                currentIndex = (currentIndex + 1) % flavors.length;
+                renderCard();
+            } else if (touchendX > touchstartX + swipeThreshold) {
+                // Свайп вправо (Предыдущий)
+                tg.HapticFeedback.selectionChanged();
+                currentIndex = (currentIndex - 1 + flavors.length) % flavors.length;
+                renderCard();
+            }
         }
 
-        function prevFlavor() {
-            tg.HapticFeedback.selectionChanged();
-            currentIndex = (currentIndex - 1 + flavors.length) % flavors.length;
-            renderCard(-1);
-        }
-
-        function addToCart() {
+        // Обработка кнопки добавления (заглушка для интеграции корзины)
+        function addToCart(event, id) {
+            event.stopPropagation(); // Защита от срабатывания свайпов/кликов по карточке
             tg.HapticFeedback.impactOccurred('medium');
-            // Здесь будет логика добавления в корзину. Пока просто вибро-отклик.
+            
+            // Всплывающее системное окно снизу (Native UI)
             tg.MainButton.setText("Товар добавлен (1500 ₽)");
+            tg.MainButton.color = "#000000";
             tg.MainButton.show();
-            setTimeout(() => tg.MainButton.hide(), 2000);
+            setTimeout(() => { tg.MainButton.hide(); }, 2000);
         }
 
-        // Инициализация при старте
-        window.onload = () => renderCard(1);
+        // Старт
+        window.onload = () => renderCard();
 
     </script>
 </body>
