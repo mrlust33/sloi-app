@@ -154,7 +154,6 @@ function renderCartSheet(totalPrice, totalCount) {
     const emptyContent = document.getElementById('cart-content-empty');
     const headerBtn = document.getElementById('clear-cart-btn');
 
-    // КОРЗИНА ПУСТА
     if (totalCount === 0) {
         filledContent.style.display = 'none';
         emptyContent.style.setProperty('display', 'flex', 'important');
@@ -163,7 +162,6 @@ function renderCartSheet(totalPrice, totalCount) {
         return;
     }
 
-    // В КОРЗИНЕ ЕСТЬ ТОВАРЫ
     filledContent.style.display = 'block';
     emptyContent.style.setProperty('display', 'none', 'important');
     headerBtn.style.display = 'block';
@@ -507,6 +505,8 @@ function populateWheel(wheelId, items) {
 function initPickerScroll() {
     ['wheel-date', 'wheel-hours', 'wheel-minutes'].forEach(id => {
         const wheel = document.getElementById(id);
+        let scrollTimeout;
+
         wheel.addEventListener('scroll', () => {
             let index = Math.round(wheel.scrollTop / 44);
             let maxIndex = wheel.children.length - 1;
@@ -524,6 +524,14 @@ function initPickerScroll() {
                     updateHoursWheel(index);
                 }
             }
+
+            // ЖЕСТКИЙ АВТОДОВОДЧИК БЕЗ НЕДОКРУТОВ
+            window.clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const itemHeight = 44;
+                const targetIndex = Math.round(wheel.scrollTop / itemHeight);
+                wheel.scrollTo({ top: targetIndex * itemHeight, behavior: 'smooth' });
+            }, 100);
         });
     });
 }
