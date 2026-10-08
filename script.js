@@ -157,7 +157,7 @@ function renderCartSheet(totalPrice, totalCount) {
     // КОРЗИНА ПУСТА
     if (totalCount === 0) {
         filledContent.style.display = 'none';
-        emptyContent.style.display = 'flex';
+        emptyContent.style.setProperty('display', 'flex', 'important');
         headerBtn.style.display = 'none';
         if(tg?.MainButton) tg.MainButton.hide();
         return;
@@ -165,7 +165,7 @@ function renderCartSheet(totalPrice, totalCount) {
 
     // В КОРЗИНЕ ЕСТЬ ТОВАРЫ
     filledContent.style.display = 'block';
-    emptyContent.style.display = 'none';
+    emptyContent.style.setProperty('display', 'none', 'important');
     headerBtn.style.display = 'block';
 
     const list = document.getElementById('cart-items-list');
