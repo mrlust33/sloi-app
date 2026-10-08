@@ -27,9 +27,25 @@ body::before {
 
 #main-screen { background: transparent !important; }
 
+/* СТАРЫЙ КЛАСС БЛОКИРОВКИ (оставлен для обратной совместимости барабана) */
 body.modal-open, #checkout-screen.modal-open {
     overflow: hidden !important;
     touch-action: none !important;
+}
+
+/* 1. ЖЕСТКАЯ БЛОКИРОВКА ФОНА ПРИ ОТКРЫТИИ ШТОРОК */
+body.modal-active {
+    overflow: hidden !important;
+    position: fixed !important; 
+    width: 100% !important;
+    height: 100% !important;
+    touch-action: none !important; 
+}
+
+.sheet-content-scroll {
+    overflow-y: auto !important;
+    touch-action: pan-y !important; 
+    -webkit-overflow-scrolling: touch !important;
 }
 
 /* ================= БРУТАЛЬНЫЕ ЗАГОЛОВКИ ================= */
@@ -175,15 +191,12 @@ body.modal-open, #checkout-screen.modal-open {
     transform: translateY(100%); 
     transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.2, 1), padding-bottom 0.3s ease; 
     z-index: 200; 
-    touch-action: pan-y; 
     box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.1) !important;
 }
 .bottom-sheet.active { transform: translateY(0); }
 
 #checkout-screen {
-    overflow-y: auto !important;
     max-height: 85vh !important;
-    -webkit-overflow-scrolling: touch;
 }
 
 .drag-handle-area { padding: 12px 0 20px; cursor: grab; display: flex; justify-content: center; }

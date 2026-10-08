@@ -6,7 +6,6 @@ if(tg) {
     }
 }
 
-// ОБНОВЛЕННЫЕ ДЕСЕРТЫ С РАЗНЫМ НЕЙМИНГОМ (КАТАЛОГ vs ОПИСАНИЕ)
 const products = [
     { 
         id: 1, 
@@ -57,7 +56,6 @@ function initTelegramData() {
     }
 }
 
-// РЕНДЕР КАРТОЧЕК С НОВОЙ ИДЕАЛЬНОЙ СТРУКТУРОЙ
 function renderProducts() {
     const container = document.getElementById('products-container');
     products.forEach((p, index) => {
@@ -89,8 +87,11 @@ function renderProducts() {
     });
 }
 
+// 2. ЖЕСТКАЯ БЛОКИРОВКА ФОНА ПРИ ОТКРЫТИИ ЛЮБОЙ ШТОРКИ
 function openProductInfo(id) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    
+    document.body.classList.add('modal-active'); // ЗАЩИТА ОТ СКРОЛЛА
     
     const p = products.find(prod => prod.id === id);
     if(!p) return;
@@ -303,6 +304,7 @@ function clearCart(event) {
 }
 
 function openCartSheet() {
+    document.body.classList.add('modal-active'); // ЗАЩИТА ОТ СКРОЛЛА
     document.getElementById('overlay').classList.add('active');
     document.getElementById('cart-screen').classList.add('active');
     gsap.set('#cart-screen', { y: 0 }); 
@@ -331,6 +333,7 @@ function closeCartWithHaptic() {
 }
 
 function goToCheckout() {
+    document.body.classList.add('modal-active'); // ЗАЩИТА ОТ СКРОЛЛА
     document.getElementById('cart-screen').classList.remove('active');
     document.getElementById('checkout-screen').classList.add('active');
     gsap.set('#checkout-screen', { y: 0 });
@@ -343,6 +346,7 @@ function goToCheckout() {
 }
 
 function closeAllSheets() {
+    document.body.classList.remove('modal-active'); // СНИМАЕМ БЛОКИРОВКУ
     document.getElementById('overlay').classList.remove('active');
     document.getElementById('cart-screen').classList.remove('active');
     document.getElementById('checkout-screen').classList.remove('active');
@@ -398,7 +402,6 @@ function sendDataToBot() {
     }
 }
 
-// ПЕРЕПИСАННАЯ ФИЗИКА СВАЙПОВ (ИГНОР ДИАГОНАЛИ + ТРЕКИНГ СКОРОСТИ)
 function initBottomSheetSwipe(sheetId, handleAreaId) {
     const sheet = document.getElementById(sheetId);
     const handleArea = document.getElementById(handleAreaId);
@@ -654,9 +657,9 @@ function openPicker() {
         document.activeElement.blur(); 
     }
 
-    document.body.classList.add('modal-open');
+    document.body.classList.add('modal-active');
     const checkoutSheet = document.getElementById('checkout-screen');
-    if (checkoutSheet) checkoutSheet.classList.add('modal-open');
+    if (checkoutSheet) checkoutSheet.classList.add('modal-active');
 
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     
@@ -671,9 +674,9 @@ function openPicker() {
 }
 
 function closePickerAndSave() {
-    document.body.classList.remove('modal-open');
+    document.body.classList.remove('modal-active');
     const checkoutSheet = document.getElementById('checkout-screen');
-    if (checkoutSheet) checkoutSheet.classList.remove('modal-open');
+    if (checkoutSheet) checkoutSheet.classList.remove('modal-active');
 
     if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     
@@ -740,3 +743,17 @@ initBottomSheetSwipe('checkout-screen', 'drag-handle-checkout');
 initBottomSheetSwipe('product-info-screen', 'drag-handle-info');
 initKeyboardHandling();
 initEnterNavigation();
+
+// 3. АППАРАТНАЯ ЗАЩИТА ТАЧ-СОБЫТИЙ ОВЕРЛЕЯ
+document.querySelectorAll('.bottom-sheet').forEach(sheet => {
+    sheet.classList.add('sheet-content-scroll');
+});
+
+const mainOverlay = document.getElementById('overlay');
+if (mainOverlay) {
+    mainOverlay.addEventListener('touchmove', (e) => {
+        if (!e.target.closest('.sheet-content-scroll')) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+}
