@@ -3,169 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>СЛОИ - Крафтовые десерты</title>
+    <title>SweetSpot - Крафтовые десерты</title>
     
-    <!-- Подключение Telegram Web App API -->
+    <!-- Новая жесткая шрифтовая пара: Plus Jakarta Sans + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <!-- Перешли на Animate.css для надежности в Telegram -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     
-    <style>
-        /* Базовый сброс и премиум-шрифт */
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Roboto, sans-serif; 
-            background-color: #f2f2f7 !important; 
-            color: #000000 !important; 
-            margin: 0; padding: 0; padding-bottom: 120px; 
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        /* Шапка */
-        .header { padding: 24px 16px; text-align: center; }
-        .header h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -1px; text-transform: uppercase; color: #000000 !important; }
-        .header p { margin: 6px 0 0 0; font-size: 15px; font-weight: 600; color: #8e8e93 !important; }
-        
-        /* Сетка каталога */
-        .catalog { padding: 0 16px; display: flex; flex-direction: column; gap: 24px; }
-        
-        /* Новые премиум-карточки (opacity: 0 убрали, анимация управляется классами) */
-        .product-card { 
-            background: #ffffff !important; 
-            border-radius: 20px; 
-            overflow: hidden; 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-            transform: translateZ(0); 
-        }
-        .product-image { 
-            width: 100%; 
-            height: 300px; 
-            object-fit: cover; 
-            display: block; 
-            background-color: #eeeeee;
-        }
-        .product-info-wrap { 
-            padding: 16px 20px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-        }
-        .product-info h3 { margin: 0 0 4px 0; font-size: 18px; font-weight: 700; color: #000000 !important; }
-        .product-info p { margin: 0; font-size: 15px; font-weight: 700; color: #8e8e93 !important; }
-        
-        /* Тактильная кнопка добавления */
-        .add-btn { 
-            background: #000000 !important; 
-            color: #ffffff !important; 
-            border: none; 
-            padding: 10px 24px; 
-            border-radius: 100px; 
-            font-size: 15px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            transition: transform 0.15s ease;
-        }
-        .add-btn:active { transform: scale(0.92); } 
-        
-        /* Glassmorphism Корзина */
-        .floating-cart { 
-            position: fixed; 
-            bottom: 24px; 
-            left: 50%;
-            transform: translateX(-50%);
-            width: calc(100% - 32px);
-            background: rgba(0, 0, 0, 0.8) !important; 
-            backdrop-filter: blur(12px); 
-            -webkit-backdrop-filter: blur(12px);
-            color: #ffffff !important; 
-            text-align: center; 
-            padding: 18px; 
-            border-radius: 100px; 
-            font-size: 16px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            display: none; 
-            z-index: 100;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.15s ease;
-        }
-        .floating-cart:active { transform: translate(-50%, 2px) scale(0.97); }
-
-        /* Темная подложка под шторку */
-        .overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 150;
-        }
-        .overlay.active { opacity: 1; pointer-events: all; }
-
-        /* Плавная выезжающая шторка оформления (Bottom Sheet) */
-        #checkout-screen { 
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            background: #ffffff !important; 
-            height: 85vh;
-            border-radius: 28px 28px 0 0; 
-            padding: 24px 20px; 
-            box-sizing: border-box;
-            transform: translateY(100%); 
-            transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.2, 1);
-            z-index: 200;
-            overflow-y: auto;
-        }
-        #checkout-screen.active { transform: translateY(0); }
-
-        .drag-handle { width: 40px; height: 5px; background: #e5e5ea; border-radius: 3px; margin: 0 auto 20px auto; }
-        
-        .checkout-header { text-align: center; margin-bottom: 24px; }
-        .checkout-header h1 { margin: 0; font-size: 24px; font-weight: 800; color: #000 !important;}
-        .checkout-header p { margin: 4px 0 0; font-size: 16px; font-weight: 600; color: #000 !important; }
-
-        /* Поля ввода в стиле iOS */
-        .input-group { margin-bottom: 12px; }
-        .input-group input { 
-            width: 100%; padding: 16px; box-sizing: border-box; 
-            border: none; border-radius: 14px; font-size: 16px; font-weight: 500;
-            background: #f2f2f7 !important; color: #000000 !important; 
-            outline: none; transition: background 0.2s;
-        }
-        .input-group input:focus { background: #e5e5ea !important; }
-        .input-group input::placeholder { color: #8e8e93; }
-        .row { display: flex; gap: 12px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Главная витрина -->
     <div id="main-screen">
-        <div class="header animate__animated animate__fadeInDown">
-            <h1>СЛОИ</h1>
-            <p>Доставка в ЖК Жулебино Парк: Суббота</p>
+        <div class="header">
+            <h1 class="brand-title">SweetSpot</h1>
+            <p id="sweet-subtitle">Ваш сладкий момент на сегодня ✨</p>
         </div>
-        
-        <div class="catalog" id="products-container">
-            <!-- Карточки генерируются скриптом -->
-        </div>
+        <div class="catalog" id="products-container"></div>
     </div>
 
-    <!-- Затемнение фона -->
-    <div class="overlay" id="overlay" onclick="closeCheckout()"></div>
+    <!-- Общий оверлей для шторок -->
+    <div class="overlay" id="overlay" onclick="closeAllSheets()"></div>
 
-    <!-- Выезжающая шторка -->
-    <div id="checkout-screen">
-        <div class="drag-handle"></div>
+    <!-- ШТОРКА 1: КОРЗИНА -->
+    <div class="bottom-sheet" id="cart-screen">
+        <div class="drag-handle-area" id="drag-handle-cart">
+            <div class="drag-handle"></div>
+        </div>
+        <div class="cart-header">
+            <h1 class="cart-title">Корзина</h1>
+            <button class="clear-cart-btn" onclick="clearCart()">Очистить</button>
+        </div>
+        
+        <div id="cart-items-list"></div>
+        
+        <div class="cart-totals">
+            <div class="total-row"><span>Товары</span><span id="cart-subtotal">0 ₽</span></div>
+            <div class="total-row"><span>Доставка</span><span>0 ₽</span></div>
+            <hr class="total-divider">
+            <div class="total-row grand-total"><span>К оплате</span><span id="cart-grandtotal">0 ₽</span></div>
+        </div>
+        
+        <button class="main-action-btn shimmer-btn" onclick="goToCheckout()">Перейти к оформлению</button>
+    </div>
+
+    <!-- ШТОРКА 2: ОФОРМЛЕНИЕ ЗАКАЗА -->
+    <div class="bottom-sheet" id="checkout-screen">
+        <div class="drag-handle-area" id="drag-handle-checkout">
+            <div class="drag-handle"></div>
+        </div>
         <div class="checkout-header">
-            <h1>Оформление</h1>
+            <h1 class="checkout-title">Доставка</h1>
             <p id="checkout-total">Сумма: 0 ₽</p>
         </div>
         
-        <div class="input-group">
-            <input type="tel" id="phone" placeholder="Номер телефона" required>
+        <div class="input-group" id="name-input-group">
+            <input type="text" id="username" placeholder="Ваше имя" required>
         </div>
+        
         <div class="input-group">
-            <input type="text" id="street" placeholder="Улица (например, Летчика Ларюшина)" required>
+            <input type="tel" id="phone" inputmode="numeric" autocomplete="tel" placeholder="+7 (___) ___-__-__" maxlength="18" required>
         </div>
+        <div class="input-group"><input type="text" id="street" placeholder="Улица (например, Летчика Ларюшина)" required></div>
         <div class="row">
             <div class="input-group"><input type="text" id="house" placeholder="Дом" required></div>
             <div class="input-group"><input type="number" id="entrance" placeholder="Подъезд" required></div>
@@ -174,141 +78,35 @@
             <div class="input-group"><input type="number" id="floor" placeholder="Этаж" required></div>
             <div class="input-group"><input type="number" id="flat" placeholder="Квартира" required></div>
         </div>
-        <div class="input-group">
-            <input type="text" id="comment" placeholder="Комментарий курьеру">
+        <div class="input-group"><input type="text" id="comment" placeholder="Комментарий курьеру"></div>
+        
+        <div class="delivery-time-trigger" id="trigger-btn" onclick="openPicker()">
+            <span>📅 Дата и время доставки</span>
+            <span id="delivery-time-value" class="placeholder">Указать... 🕒</span>
         </div>
+        
+        <button class="main-action-btn shimmer-btn" onclick="sendDataToBot()">Подтвердить заказ</button>
+        <!-- Маркетинговый триггер -->
+        <p class="marketing-trigger">✨ Десерты начнут готовиться сразу после подтверждения</p>
     </div>
 
-    <!-- Кнопка Корзины -->
-    <div class="floating-cart" id="floating-cart" onclick="goToCheckout()">
-        Оформить (<span id="cart-sum">0</span> ₽)
+    <!-- ПЛАВАЮЩАЯ КНОПКА КОРЗИНЫ -->
+    <div class="floating-cart-btn shimmer-btn" id="floating-cart-btn" onclick="openCartSheet()">
+        Посмотреть корзину &bull; <span id="cart-total-count">0</span> шт
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+    <!-- ЦЕНТРИРОВАННЫЙ iOS POP-UP PICKER -->
+    <div class="picker-overlay" id="picker-overlay" onclick="closePickerAndSave()"></div>
+    <div class="picker-modal" id="picker-modal">
+        <div class="picker-body">
+            <div class="picker-highlight"></div>
+            <div class="picker-wheel wheel-date" id="wheel-date"></div>
+            <div class="picker-wheel wheel-time" id="wheel-hours"></div>
+            <div class="picker-wheel wheel-time" id="wheel-minutes"></div>
+        </div>
+        <button class="picker-done-btn-bottom" onclick="closePickerAndSave()">Готово</button>
+    </div>
 
-        const products = [
-            { id: 1, name: "Трайфл «Банан-Клубника»", price: 1500, img: "banan.jpg" },
-            { id: 2, name: "Трайфл «Вишня с шоколадом»", price: 1500, img: "vishny.jpg" },
-            { id: 3, name: "Трайфл «Клубника»", price: 1500, img: "klubnika.jpg" }
-        ];
-
-        let cart = {};
-
-        function renderProducts() {
-            const container = document.getElementById('products-container');
-            products.forEach((p, index) => {
-                const card = document.createElement('div');
-                // Добавили классы Animate.css и inline-задержку для эффекта каскада
-                card.className = 'product-card animate__animated animate__fadeInUp';
-                card.style.animationDelay = `${index * 0.15}s`;
-                
-                card.innerHTML = `
-                    <img src="${p.img}" class="product-image" alt="${p.name}">
-                    <div class="product-info-wrap">
-                        <div class="product-info">
-                            <h3>${p.name}</h3>
-                            <p>${p.price} ₽</p>
-                        </div>
-                        <button class="add-btn" onclick="addToCart(${p.id})">В корзину</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function addToCart(productId) {
-            if (!cart[productId]) cart[productId] = 0;
-            cart[productId]++;
-            
-            tg.HapticFeedback.impactOccurred('light'); 
-            
-            updateCartUI();
-        }
-
-        function updateCartUI() {
-            let total = 0;
-            for (let id in cart) {
-                const product = products.find(p => p.id == id);
-                total += product.price * cart[id];
-            }
-            
-            const cartBtn = document.getElementById('floating-cart');
-            if (total > 0) {
-                cartBtn.style.display = 'block';
-                // Добавляем микро-анимацию при обновлении суммы
-                cartBtn.classList.remove('animate__animated', 'animate__headShake');
-                void cartBtn.offsetWidth; // Сброс анимации
-                cartBtn.classList.add('animate__animated', 'animate__headShake');
-                
-                document.getElementById('cart-sum').innerText = total;
-            } else {
-                cartBtn.style.display = 'none';
-            }
-            
-            if (document.getElementById('checkout-screen').classList.contains('active')) {
-                tg.MainButton.setText(`Оплатить при получении`);
-                tg.MainButton.show();
-            }
-        }
-
-        function goToCheckout() {
-            document.getElementById('overlay').classList.add('active');
-            document.getElementById('checkout-screen').classList.add('active');
-            document.getElementById('floating-cart').style.display = 'none';
-            
-            let total = document.getElementById('cart-sum').innerText;
-            document.getElementById('checkout-total').innerText = `Сумма: ${total} ₽`;
-            
-            tg.MainButton.setText(`Оформить (${total} ₽)`);
-            tg.MainButton.color = "#000000"; 
-            tg.MainButton.show();
-            
-            tg.MainButton.onClick(sendDataToBot);
-        }
-
-        function closeCheckout() {
-            document.getElementById('overlay').classList.remove('active');
-            document.getElementById('checkout-screen').classList.remove('active');
-            updateCartUI();
-            tg.MainButton.hide();
-        }
-
-        function sendDataToBot() {
-            const address = {
-                street: document.getElementById('street').value,
-                house: document.getElementById('house').value,
-                entrance: document.getElementById('entrance').value,
-                floor: document.getElementById('floor').value,
-                flat: document.getElementById('flat').value,
-                comment: document.getElementById('comment').value
-            };
-            
-            const phone = document.getElementById('phone').value;
-
-            let cartData = [];
-            let totalPrice = 0;
-            for (let id in cart) {
-                if (cart[id] > 0) {
-                    const p = products.find(p => p.id == id);
-                    cartData.push({ id: p.id, name: p.name, quantity: cart[id], price: p.price });
-                    totalPrice += p.price * cart[id];
-                }
-            }
-
-            const payload = {
-                cart: cartData,
-                totalPrice: totalPrice,
-                address: address,
-                phone: phone
-            };
-
-            tg.sendData(JSON.stringify(payload));
-        }
-
-        // Запуск генерации
-        renderProducts();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
