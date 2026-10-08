@@ -16,7 +16,7 @@ body {
 
 #main-screen { background: transparent !important; }
 
-/* ================= БРУТАЛЬНЫЕ ЗАГОЛОВКИ (Plus Jakarta Sans) ================= */
+/* ================= БРУТАЛЬНЫЕ ЗАГОЛОВКИ ================= */
 .brand-title, .cart-title, .checkout-title { 
     margin: 0; 
     font-family: 'Plus Jakarta Sans', sans-serif !important; 
@@ -63,7 +63,7 @@ body {
 }
 .product-info p { margin: 0; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: #1e1611; }
 
-/* ================= КНОПКИ И СЧЕТЧИКИ (INTER) ================= */
+/* ================= КНОПКИ И СЧЕТЧИКИ ================= */
 .action-container { position: relative; height: 42px; min-width: 120px; }
 
 .add-btn { 
@@ -95,7 +95,7 @@ body {
     animation: shimmer 5s infinite; pointer-events: none;
 }
 
-/* ================= ПЛАВАЮЩАЯ КНОПКА КОРЗИНЫ ================= */
+/* ================= ПЛАВАЮЩАЯ КНОПКА ================= */
 .floating-cart-btn {
     position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 100px); 
     width: calc(100% - 32px); max-width: 400px; background: #1e1611; color: #ffffff; text-align: center; 
@@ -104,7 +104,7 @@ body {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* ================= СЛИВОЧНО-МОЛОЧНЫЕ ШТОРКИ (BOTTOM SHEETS) ================= */
+/* ================= ШТОРКИ ================= */
 .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 150; }
 .overlay.active { opacity: 1; pointer-events: all; }
 
@@ -122,21 +122,19 @@ body {
 .drag-handle-area:active { cursor: grabbing; }
 .drag-handle { width: 36px; height: 4px; background: rgba(30, 22, 17, 0.15); border-radius: 2px; }
 
-/* ================= ВНУТРЕННОСТИ КОРЗИНЫ ================= */
+/* ================= КОРЗИНА И ЕЕ ПУСТОЕ СОСТОЯНИЕ ================= */
 .cart-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
 .clear-cart-btn { 
-    padding: 6px 14px; 
-    border-radius: 20px; 
-    border: 1px solid rgba(0, 0, 0, 0.15) !important; 
-    background: rgba(30, 22, 17, 0.05) !important; 
-    color: #1e1611; 
-    font-family: 'Inter', sans-serif; 
-    font-size: 12px; 
-    font-weight: 600; 
-    cursor: pointer; 
-    transition: all 0.2s ease; 
+    padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(0, 0, 0, 0.15) !important; 
+    background: rgba(30, 22, 17, 0.05) !important; color: #1e1611; font-family: 'Inter', sans-serif; 
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; 
 }
 .clear-cart-btn:active { transform: scale(0.95); background: rgba(30, 22, 17, 0.1) !important; }
+
+/* Новое: Пустая корзина */
+@keyframes fadeInMsg { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.empty-cart-state { display: flex; justify-content: center; align-items: center; height: 250px; animation: fadeInMsg 0.4s ease; }
+.empty-cart-title { font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 22px; font-weight: 800; color: #6f4e37; text-align: center; margin: 0; }
 
 .cart-item { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .cart-item-img { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
@@ -150,17 +148,9 @@ body {
 .total-divider { border: 0; border-top: 1px solid rgba(30, 22, 17, 0.1); margin: 12px 0; }
 .grand-total { font-weight: 600; font-size: 20px; color: #1e1611; }
 
-.main-action-btn { width: 100%; padding: 16px; border-radius: 16px; background: #1e1611; color: #fff; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; border: none; margin-top: 24px; position: relative; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03); cursor: pointer; }
+.main-action-btn { width: 100%; padding: 16px; border-radius: 16px; background: #1e1611; color: #fff; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; border: none; margin-top: 24px; position: relative; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03); cursor: pointer; transition: background 0.3s ease; }
 
-/* Маркетинговый триггер */
-.marketing-trigger {
-    font-size: 12px;
-    font-family: 'Inter', sans-serif;
-    color: rgba(34, 26, 21, 0.6);
-    text-align: center;
-    margin-top: 10px;
-    margin-bottom: 0;
-}
+.marketing-trigger { font-size: 12px; font-family: 'Inter', sans-serif; color: rgba(34, 26, 21, 0.6); text-align: center; margin-top: 10px; margin-bottom: 0; }
 
 /* ================= ИНПУТЫ ОФОРМЛЕНИЯ ================= */
 .checkout-header { text-align: center; margin-bottom: 24px; }
@@ -177,69 +167,26 @@ body {
 
 /* ================= СТРОКА ВЫЗОВА БАРАБАНА ================= */
 .delivery-time-trigger {
-    display: flex; justify-content: space-between; align-items: center;
-    width: 100%; padding: 16px; box-sizing: border-box;
-    border: 1.5px solid #d1d5db !important; border-radius: 12px;
-    font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 500; background: #ffffff !important; color: #1e1611; 
-    margin-bottom: 12px; cursor: pointer; transition: transform 0.1s ease, background 0.2s ease;
-    touch-action: manipulation;
+    display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 16px; box-sizing: border-box;
+    border: 1.5px solid #d1d5db !important; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 500; background: #ffffff !important; color: #1e1611; 
+    margin-bottom: 12px; cursor: pointer; transition: transform 0.1s ease, background 0.2s ease; touch-action: manipulation;
 }
 .delivery-time-trigger:active { transform: scale(0.97); background: #f9fafb !important; }
 #delivery-time-value { font-weight: 600; font-size: 15px; color: #1e1611; }
 #delivery-time-value.placeholder { font-weight: 500; color: #9ca3af; }
 
-/* ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН (DARK MODE) ================= */
-.picker-overlay {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.65) !important;
-    backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important;
-    z-index: 290; opacity: 0; pointer-events: none;
-}
+/* ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН ================= */
+.picker-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.65) !important; backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important; z-index: 290; opacity: 0; pointer-events: none; }
 .picker-overlay.active { pointer-events: all; }
-
-.picker-modal {
-    position: fixed; top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(0.85); 
-    background: #1c1c1e !important;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
-    border-radius: 24px; padding: 20px; box-sizing: border-box;
-    width: 90%; max-width: 360px; z-index: 300; opacity: 0; pointer-events: none;
-    display: flex; flex-direction: column;
-}
+.picker-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.85); background: #1c1c1e !important; box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important; border-radius: 24px; padding: 20px; box-sizing: border-box; width: 90%; max-width: 360px; z-index: 300; opacity: 0; pointer-events: none; display: flex; flex-direction: column; }
 .picker-modal.active { pointer-events: all; }
-
-.picker-body {
-    position: relative; height: 180px; display: flex; justify-content: center;
-    mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent);
-    -webkit-mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent);
-}
-
-.picker-highlight {
-    position: absolute; top: 50%; left: 0; right: 0;
-    transform: translateY(-50%); height: 44px;
-    background: rgba(255,255,255,0.08); border-radius: 8px; pointer-events: none;
-    border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.picker-wheel {
-    overflow-y: scroll; scroll-snap-type: y mandatory; padding: 68px 0; scrollbar-width: none;
-}
+.picker-body { position: relative; height: 180px; display: flex; justify-content: center; mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); -webkit-mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); }
+.picker-highlight { position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%); height: 44px; background: rgba(255,255,255,0.08); border-radius: 8px; pointer-events: none; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
+.picker-wheel { overflow-y: scroll; scroll-snap-type: y mandatory; padding: 68px 0; scrollbar-width: none; }
 .picker-wheel::-webkit-scrollbar { display: none; }
 .wheel-date { flex: 1.5; text-align: left; padding-left: 10px; }
 .wheel-time { flex: 1; text-align: center; }
-
-.picker-item {
-    height: 44px; line-height: 44px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 500; 
-    color: rgba(255,255,255,0.4); 
-    scroll-snap-align: center; transition: opacity 0.2s, transform 0.2s, color 0.2s;
-}
+.picker-item { height: 44px; line-height: 44px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.4); scroll-snap-align: center; transition: opacity 0.2s, transform 0.2s, color 0.2s; }
 .picker-item.active { color: #ffffff; font-weight: 600; transform: scale(1.05); }
-
-/* Контрастная кнопка Готово */
-.picker-done-btn-bottom {
-    background: #ffffff !important; color: #000000 !important;
-    font-weight: 600; font-family: 'Inter', sans-serif;
-    border-radius: 16px; padding: 14px 0; margin-top: 15px; width: 100%;
-    border: none; font-size: 16px; cursor: pointer; transition: transform 0.1s;
-}
+.picker-done-btn-bottom { background: #ffffff !important; color: #000000 !important; font-weight: 600; font-family: 'Inter', sans-serif; border-radius: 16px; padding: 14px 0; margin-top: 15px; width: 100%; border: none; font-size: 16px; cursor: pointer; transition: transform 0.1s; }
 .picker-done-btn-bottom:active { transform: scale(0.96); }

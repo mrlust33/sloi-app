@@ -11,7 +11,6 @@ let cart = {};
 let isCartBtnVisible = false;
 let saturdaysData = [];
 
-// Автоподстановка данных Telegram
 function initTelegramData() {
     const tgUser = tg?.initDataUnsafe?.user || {};
     const nameInput = document.getElementById('username');
@@ -19,7 +18,6 @@ function initTelegramData() {
     
     if (nameInput) {
         if (tgUser.first_name) nameInput.value = tgUser.first_name;
-        
         const accountText = document.createElement('p');
         accountText.className = 'tg-account-info';
         accountText.innerText = tgUser.username ? 
@@ -29,7 +27,6 @@ function initTelegramData() {
     }
 }
 
-// Отрисовка каталога
 function renderProducts() {
     const container = document.getElementById('products-container');
     products.forEach((p, index) => {
@@ -58,7 +55,6 @@ function renderProducts() {
     });
 }
 
-// Логика добавления, искр и вибрации
 function handleFirstAdd(event, id) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
     
@@ -119,7 +115,6 @@ function updateCounterNum(id, direction) {
     }
 }
 
-// Обновление состояния корзины
 function updateCartUI() {
     let totalCount = 0;
     let totalPrice = 0;
@@ -142,18 +137,36 @@ function updateCartUI() {
     } else if (totalCount === 0 && isCartBtnVisible) {
         gsap.to(floatingBtn, { y: 100, opacity: 0, duration: 0.3, onComplete: () => { floatingBtn.style.display = 'none'; } });
         isCartBtnVisible = false;
-        closeAllSheets();
     }
     
     if (document.getElementById('cart-screen').classList.contains('active')) {
-        renderCartSheet(totalPrice);
+        renderCartSheet(totalPrice, totalCount);
     }
 }
 
-function renderCartSheet(totalPrice) {
+function renderCartSheet(totalPrice, totalCount) {
     const list = document.getElementById('cart-items-list');
+    const totals = document.querySelector('.cart-totals');
+    const emptyMsg = document.getElementById('empty-cart-message');
+    const mainBtn = document.getElementById('cart-main-action-btn');
+
+    if (totalCount === 0) {
+        list.style.display = 'none';
+        totals.style.display = 'none';
+        emptyMsg.style.display = 'flex';
+        mainBtn.innerText = 'Вернуться в меню';
+        mainBtn.onclick = closeAllSheets;
+        if(tg?.MainButton) tg.MainButton.hide();
+        return;
+    }
+
+    list.style.display = 'block';
+    totals.style.display = 'block';
+    emptyMsg.style.display = 'none';
+    mainBtn.innerText = 'Перейти к оформлению';
+    mainBtn.onclick = goToCheckout;
+
     list.innerHTML = '';
-    
     for (let id in cart) {
         if (cart[id] > 0) {
             const p = products.find(p => p.id == id);
@@ -178,14 +191,14 @@ function renderCartSheet(totalPrice) {
     document.getElementById('cart-grandtotal').innerText = `${totalPrice} ₽`;
     document.getElementById('checkout-total').innerText = `Сумма: ${totalPrice} ₽`;
     
-    if(tg?.MainButton) {
-        tg.MainButton.setText(`Оплатить ${totalPrice} ₽`);
-    }
+    if(tg?.MainButton) tg.MainButton.setText(`Оплатить ${totalPrice} ₽`);
 }
 
-// Полный сброс (Работа над ошибками)
-function clearCart() {
+// 1. ИСПРАВЛЕНИЕ: ПРАВИЛЬНАЯ ОЧИСТКА И ПЕРЕРИСОВКА (без закрытия шторки)
+function clearCart(event) {
+    if (event) event.preventDefault();
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    
     cart = {};
     products.forEach(p => {
         const btn = document.getElementById(`btn-add-${p.id}`);
@@ -198,11 +211,10 @@ function clearCart() {
             gsap.to(btn, { opacity: 1, duration: 0.2, delay: 0.1 });
         }
     });
-    updateCartUI(); // Плавающая кнопка скроется автоматически внутри этой функции
-    closeAllSheets(); // Мягко закрываем шторку
+    
+    updateCartUI();
 }
 
-// Шторки
 function openCartSheet() {
     document.getElementById('overlay').classList.add('active');
     document.getElementById('cart-screen').classList.add('active');
@@ -210,10 +222,14 @@ function openCartSheet() {
     gsap.to('#floating-cart-btn', { y: 100, opacity: 0, duration: 0.3 });
     
     let totalPrice = 0;
+    let totalCount = 0;
     for (let id in cart) {
-        if (cart[id] > 0) totalPrice += products.find(p => p.id == id).price * cart[id];
+        if (cart[id] > 0) {
+            totalPrice += products.find(p => p.id == id).price * cart[id];
+            totalCount += cart[id];
+        }
     }
-    renderCartSheet(totalPrice);
+    renderCartSheet(totalPrice, totalCount);
 }
 
 function goToCheckout() {
@@ -239,7 +255,6 @@ function closeAllSheets() {
     if(tg?.MainButton) tg.MainButton.hide();
 }
 
-// Отправка данных боту и закрытие
 function sendDataToBot() {
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user || {};
     
@@ -280,11 +295,10 @@ function sendDataToBot() {
     
     if(tg) {
         tg.sendData(JSON.stringify(payload));
-        tg.close(); // Мгновенно закрываем Web App после отправки JSON
+        tg.close();
     }
 }
 
-// GSAP Доводчик
 function initBottomSheetSwipe(sheetId, handleAreaId) {
     const sheet = document.getElementById(sheetId);
     const handleArea = document.getElementById(handleAreaId);
@@ -332,8 +346,89 @@ function initBottomSheetSwipe(sheetId, handleAreaId) {
     window.addEventListener('mouseup', onDragEnd);
 }
 
-// ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН =================
+// 2. УМНОЕ УПРАВЛЕНИЕ КЛАВИАТУРОЙ (АВТОСКРЫТИЕ И ТАП ПО ФОНУ)
+function initKeyboardHandling() {
+    // Скрытие по тапу на свободное место шторки
+    document.querySelectorAll('.bottom-sheet').forEach(sheet => {
+        sheet.addEventListener('click', (e) => {
+            // Если кликнули мимо инпутов (в саму шторку или заголовки)
+            if (e.target === sheet || e.target.classList.contains('checkout-header') || e.target.classList.contains('cart-header')) {
+                if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                    document.activeElement.blur(); // Принудительное скрытие клавиатуры
+                }
+            }
+        });
+    });
 
+    // Нативный хук: если TG поддерживает SettingsButton, можно привязать к ней скрытие, 
+    // но blur() гарантированно роняет клавиатуру на iOS и Android внутри WebView
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('focus', () => {
+            // Резервный вызов для нативных механик
+            if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
+        });
+    });
+}
+
+// 3. ЛОГИКА ПЕРЕХОДА ПО КНОПКЕ «ENTER / ДАЛЕЕ»
+function initEnterNavigation() {
+    const inputIds = ['username', 'phone', 'street', 'house', 'entrance', 'floor', 'flat', 'comment'];
+    
+    inputIds.forEach((id, index) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (index < inputIds.length - 1) {
+                        document.getElementById(inputIds[index + 1]).focus();
+                    } else {
+                        el.blur(); // Последнее поле - убираем клаву
+                    }
+                }
+            });
+        }
+    });
+}
+
+function initPhoneMask() {
+    const phoneInput = document.getElementById('phone');
+    if (!phoneInput) return;
+
+    phoneInput.addEventListener('input', function (e) {
+        let input = e.target.value.replace(/\D/g, ''); 
+        if (!input) { e.target.value = ''; return; }
+        
+        if (['7', '8', '9'].includes(input[0])) {
+            if (input[0] === '9') input = '7' + input;
+            let formatted = '+7 ';
+            if (input.length > 1) formatted += '(' + input.substring(1, 4);
+            if (input.length >= 5) formatted += ') ' + input.substring(4, 7);
+            if (input.length >= 8) formatted += '-' + input.substring(7, 9);
+            if (input.length >= 10) formatted += '-' + input.substring(9, 11);
+            e.target.value = formatted;
+        } else {
+            e.target.value = '+' + input.substring(0, 15);
+        }
+
+        // АВТОСКРЫТИЕ ПРИ ПОЛНОМ ЗАПОЛНЕНИИ: +7 (999) 999-99-99 (18 символов)
+        if (e.target.value.length === 18) {
+            e.target.blur();
+        }
+    });
+
+    phoneInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && e.target.value.length <= 4) e.target.value = '';
+    });
+    phoneInput.addEventListener('focus', function(e) {
+         if (!e.target.value) e.target.value = '+7 ';
+    });
+    phoneInput.addEventListener('blur', function(e) {
+         if (e.target.value === '+7 ' || e.target.value === '+7') e.target.value = '';
+    });
+}
+
+// ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН =================
 function initPickerData() {
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     let d = new Date();
@@ -419,13 +514,16 @@ function initPickerScroll() {
 }
 
 function openPicker() {
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+        document.activeElement.blur(); // Прячем клаву при открытии барабана
+    }
+
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     
     document.getElementById('picker-overlay').classList.add('active');
     document.getElementById('picker-modal').classList.add('active');
 
     gsap.to('#picker-overlay', { opacity: 1, duration: 0.3 });
-    // Pop-Up анимация из центра
     gsap.fromTo('#picker-modal',
         { xPercent: -50, yPercent: -50, scale: 0.85, opacity: 0, top: '50%', left: '50%' },
         { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.5)" }
@@ -457,45 +555,12 @@ function closePickerAndSave() {
         valEl.classList.remove('placeholder');
     }
     
-    // Закрытие окна с просадкой
     gsap.to('#picker-overlay', { opacity: 0, duration: 0.3, onComplete: () => {
         document.getElementById('picker-overlay').classList.remove('active');
     }});
     gsap.to('#picker-modal', { scale: 0.8, opacity: 0, duration: 0.3, ease: "power2.in", onComplete: () => {
         document.getElementById('picker-modal').classList.remove('active');
     }});
-}
-
-function initPhoneMask() {
-    const phoneInput = document.getElementById('phone');
-    if (!phoneInput) return;
-
-    phoneInput.addEventListener('input', function (e) {
-        let input = e.target.value.replace(/\D/g, ''); 
-        if (!input) { e.target.value = ''; return; }
-        
-        if (['7', '8', '9'].includes(input[0])) {
-            if (input[0] === '9') input = '7' + input;
-            let formatted = '+7 ';
-            if (input.length > 1) formatted += '(' + input.substring(1, 4);
-            if (input.length >= 5) formatted += ') ' + input.substring(4, 7);
-            if (input.length >= 8) formatted += '-' + input.substring(7, 9);
-            if (input.length >= 10) formatted += '-' + input.substring(9, 11);
-            e.target.value = formatted;
-        } else {
-            e.target.value = '+' + input.substring(0, 15);
-        }
-    });
-
-    phoneInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Backspace' && e.target.value.length <= 4) e.target.value = '';
-    });
-    phoneInput.addEventListener('focus', function(e) {
-         if (!e.target.value) e.target.value = '+7 ';
-    });
-    phoneInput.addEventListener('blur', function(e) {
-         if (e.target.value === '+7 ' || e.target.value === '+7') e.target.value = '';
-    });
 }
 
 function initAnimations() {
@@ -528,3 +593,5 @@ initAnimations();
 initPhoneMask();
 initBottomSheetSwipe('cart-screen', 'drag-handle-cart');
 initBottomSheetSwipe('checkout-screen', 'drag-handle-checkout');
+initKeyboardHandling();
+initEnterNavigation();

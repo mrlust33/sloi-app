@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SweetSpot - Крафтовые десерты</title>
     
-    <!-- Новая жесткая шрифтовая пара: Plus Jakarta Sans + Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
@@ -37,10 +36,15 @@
         </div>
         <div class="cart-header">
             <h1 class="cart-title">Корзина</h1>
-            <button class="clear-cart-btn" onclick="clearCart()">Очистить</button>
+            <button class="clear-cart-btn" onclick="clearCart(event)">Очистить</button>
         </div>
         
         <div id="cart-items-list"></div>
+        
+        <!-- Пустое состояние корзины -->
+        <div id="empty-cart-message" class="empty-cart-state" style="display: none;">
+            <h2 class="empty-cart-title">Ваша корзина пуста 🧁</h2>
+        </div>
         
         <div class="cart-totals">
             <div class="total-row"><span>Товары</span><span id="cart-subtotal">0 ₽</span></div>
@@ -49,7 +53,7 @@
             <div class="total-row grand-total"><span>К оплате</span><span id="cart-grandtotal">0 ₽</span></div>
         </div>
         
-        <button class="main-action-btn shimmer-btn" onclick="goToCheckout()">Перейти к оформлению</button>
+        <button class="main-action-btn shimmer-btn" id="cart-main-action-btn" onclick="goToCheckout()">Перейти к оформлению</button>
     </div>
 
     <!-- ШТОРКА 2: ОФОРМЛЕНИЕ ЗАКАЗА -->
@@ -86,7 +90,6 @@
         </div>
         
         <button class="main-action-btn shimmer-btn" onclick="sendDataToBot()">Подтвердить заказ</button>
-        <!-- Маркетинговый триггер -->
         <p class="marketing-trigger">✨ Десерты начнут готовиться сразу после подтверждения</p>
     </div>
 
