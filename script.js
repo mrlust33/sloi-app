@@ -6,31 +6,34 @@ if(tg) {
     }
 }
 
-// ДОБАВЛЕНЫ ОПИСАНИЯ И СЛОИ ДЛЯ ОКНА «О ТОВАРЕ»
+// ОБНОВЛЕННЫЕ ДЕСЕРТЫ С РАЗНЫМ НЕЙМИНГОМ (КАТАЛОГ vs ОПИСАНИЕ)
 const products = [
     { 
         id: 1, 
-        name: "Трайфл «Банан-Клубника»", 
+        name: "Трайфл-кайфл «Клубника-банан»", 
+        detailName: "Шоколадный бисквит с клубникой и бананом",
         price: 1500, 
         img: "banan.jpg",
-        desc: "Идеальное сочетание спелого банана и сладкой клубники. Мягкие слои воздушного бисквита в тандеме с нежным кремом создают неповторимую легкость каждого кусочка.",
-        layers: ["Воздушный ванильный бисквит", "Нежный сливочный крем-чиз", "Кусочки спелого банана", "Ягодный мусс из спелой клубники"]
+        desc: "Идеальное сочетание спелого банана и сладкой клубники. Мягкие слои шоколадного бисквита в тандеме с нежным кремом создают неповторимую легкость каждого кусочка.",
+        layers: ["Воздушный шоколадный бисквит", "Нежный сливочный крем-чиз", "Кусочки спелого банана", "Ягодный мусс из спелой клубники"]
     },
     { 
         id: 2, 
-        name: "Трайфл «Вишня с шоколадом»", 
+        name: "Трайфл-кайфл «Ванильный с клубникой»", 
+        detailName: "Ванильный бисквит с клубникой",
         price: 1500, 
-        img: "vishny.jpg",
-        desc: "Утонченный десерт для любителей шоколада. Терпкость темного бельгийского шоколада превосходно оттеняется пряной вишневой начинкой с легкой кислинкой.",
-        layers: ["Насыщенный шоколадный брауни", "Мусс из темного бельгийского шоколада", "Пряная вишня с легкой кислинкой", "Хрустящая шоколадная стружка"]
+        img: "klubnika.jpg", 
+        desc: "Классическая нежность с ярким вкусом свежей клубники. Легкий ванильный бисквит тает во рту, уступая место натуральному ягодному конфитюру и сливочному суфле.",
+        layers: ["Легкий ванильный бисквит", "Ванильно-сливочный суфле-мусс", "Свежая клубника в собственном соку", "Натуральный клубничный конфитюр"]
     },
     { 
         id: 3, 
-        name: "Трайфл «Клубника»", 
+        name: "Трайфл-кайфл «Соленая карамель»", 
+        detailName: "Шоколадный бисквит с бананом и карамелью",
         price: 1500, 
-        img: "klubnika.jpg",
-        desc: "Классическая нежность с ярким вкусом свежей клубники. Легкий молочный бисквит тает во рту, уступая место натуральному ягодному конфитюру и ванильному суфле.",
-        layers: ["Легкий молочный бисквит", "Ванильно-сливочный суфле-мусс", "Свежая клубника в собственном соку", "Натуральный клубничный конфитюр"]
+        img: "vishny.jpg", 
+        desc: "Утонченный десерт для любителей насыщенных вкусов. Терпкость темного шоколада превосходно оттеняется сладкой карамелью и спелым бананом.",
+        layers: ["Насыщенный шоколадный брауни", "Тягучая соленая карамель", "Ломтики свежего банана", "Мусс из темного бельгийского шоколада"]
     }
 ];
 
@@ -54,6 +57,7 @@ function initTelegramData() {
     }
 }
 
+// РЕНДЕР КАРТОЧЕК С НОВОЙ ИДЕАЛЬНОЙ СТРУКТУРОЙ
 function renderProducts() {
     const container = document.getElementById('products-container');
     products.forEach((p, index) => {
@@ -61,21 +65,22 @@ function renderProducts() {
         card.className = 'product-card animate__animated animate__fadeInUp';
         card.style.animationDelay = `${index * 0.1}s`; 
         
-        // Добавлена новая оранжевая кнопка «О десерте»
         card.innerHTML = `
             <img src="${p.img}" class="product-image" alt="${p.name}">
             <div class="product-info-wrap">
-                <div class="product-info">
-                    <h3>${p.name}</h3>
-                    <button class="about-product-btn" onclick="openProductInfo(${p.id})">О десерте</button>
-                    <p class="product-price">${p.price} ₽</p>
-                </div>
-                <div class="action-container" id="control-${p.id}">
-                    <button class="add-btn" id="btn-add-${p.id}" onclick="handleFirstAdd(event, ${p.id})">В корзину</button>
-                    <div class="counter-ui" id="counter-ui-${p.id}">
-                        <button class="counter-btn minus" onclick="handleMinus(event, ${p.id})">–</button>
-                        <div class="count-wrapper"><span class="count-text" id="count-${p.id}">1</span></div>
-                        <button class="counter-btn plus" onclick="handlePlus(event, ${p.id})">+</button>
+                <h3 class="product-title">${p.name}</h3>
+                <div class="product-controls">
+                    <div class="product-price-about">
+                        <button class="about-product-btn" onclick="openProductInfo(${p.id})">О десерте</button>
+                        <p class="product-price">${p.price} ₽</p>
+                    </div>
+                    <div class="action-container" id="control-${p.id}">
+                        <button class="add-btn" id="btn-add-${p.id}" onclick="handleFirstAdd(event, ${p.id})">В корзину</button>
+                        <div class="counter-ui" id="counter-ui-${p.id}">
+                            <button class="counter-btn minus" onclick="handleMinus(event, ${p.id})">–</button>
+                            <div class="count-wrapper"><span class="count-text" id="count-${p.id}">1</span></div>
+                            <button class="counter-btn plus" onclick="handlePlus(event, ${p.id})">+</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -84,14 +89,13 @@ function renderProducts() {
     });
 }
 
-// ЛОГИКА ОТКРЫТИЯ ШТОРКИ «О ТОВАРЕ»
 function openProductInfo(id) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     
     const p = products.find(prod => prod.id === id);
     if(!p) return;
 
-    document.getElementById('info-title').innerText = p.name;
+    document.getElementById('info-title').innerText = p.detailName;
     document.getElementById('info-img').src = p.img;
     document.getElementById('info-desc').innerText = p.desc;
     
@@ -107,7 +111,6 @@ function openProductInfo(id) {
     gsap.set('#product-info-screen', { y: 0 });
 }
 
-// ДОБАВЛЕНИЕ ИЗ ШТОРКИ О ТОВАРЕ (С ИСКРАМИ И СИНХРОНИЗАЦИЕЙ)
 function addFromInfoSheet(event, id) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
     
@@ -343,7 +346,7 @@ function closeAllSheets() {
     document.getElementById('overlay').classList.remove('active');
     document.getElementById('cart-screen').classList.remove('active');
     document.getElementById('checkout-screen').classList.remove('active');
-    document.getElementById('product-info-screen').classList.remove('active'); // Закрываем инфо о товаре
+    document.getElementById('product-info-screen').classList.remove('active'); 
     
     if (isCartBtnVisible) {
         gsap.to('#floating-cart-btn', { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.5)" });
@@ -395,33 +398,46 @@ function sendDataToBot() {
     }
 }
 
+// ПЕРЕПИСАННАЯ ФИЗИКА СВАЙПОВ (ИГНОР ДИАГОНАЛИ + ТРЕКИНГ СКОРОСТИ)
 function initBottomSheetSwipe(sheetId, handleAreaId) {
     const sheet = document.getElementById(sheetId);
     const handleArea = document.getElementById(handleAreaId);
     if(!sheet || !handleArea) return;
     
     let startY = 0;
+    let startX = 0;
     let currentY = 0;
+    let startTime = 0;
     let isDragging = false;
 
     function onDragStart(e) {
         startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        startTime = Date.now();
         isDragging = true;
         sheet.style.transition = 'none'; 
     }
+    
     function onDragMove(e) {
         if (!isDragging) return;
         const y = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-        currentY = Math.max(0, y - startY); 
-        gsap.set(sheet, { y: currentY });
+        const deltaY = y - startY;
+        
+        if (deltaY > 0) {
+            currentY = deltaY;
+            gsap.set(sheet, { y: currentY });
+        }
     }
+    
     function onDragEnd() {
         if (!isDragging) return;
         isDragging = false;
         
+        const timeElapsed = Date.now() - startTime;
+        const velocity = currentY / timeElapsed; 
         const threshold = sheet.offsetHeight * 0.20;
         
-        if (currentY > threshold) {
+        if (currentY > threshold || velocity > 0.4) {
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             gsap.to(sheet, { y: "100%", duration: 0.3, ease: "power2.out", onComplete: () => {
                 gsap.set(sheet, { clearProps: "all" });
@@ -721,6 +737,6 @@ initAnimations();
 initPhoneMask();
 initBottomSheetSwipe('cart-screen', 'drag-handle-cart');
 initBottomSheetSwipe('checkout-screen', 'drag-handle-checkout');
-initBottomSheetSwipe('product-info-screen', 'drag-handle-info'); // Доводчик для шторки инфо
+initBottomSheetSwipe('product-info-screen', 'drag-handle-info');
 initKeyboardHandling();
 initEnterNavigation();

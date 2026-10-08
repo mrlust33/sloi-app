@@ -7,20 +7,22 @@ body {
     -webkit-tap-highlight-color: transparent;
     -webkit-overflow-scrolling: touch; 
     min-height: 100vh;
-    /* Убрали background-attachment: fixed */
 }
 
-/* 1. ФИКСИРОВАННЫЙ МОБИЛЬНЫЙ ФОН ЧЕРЕЗ PSEUDO-ELEMENT */
+/* ФИКСИРОВАННЫЙ МОБИЛЬНЫЙ ФОН С МЯГКИМ РАЗМЫТИЕМ (3px) */
 body::before {
     content: "" !important;
     position: fixed !important;
-    top: 0 !important; left: 0 !important;
-    width: 100% !important; height: 100% !important;
+    top: -5% !important; left: -5% !important;
+    width: 110% !important; height: 110% !important;
     background-image: url('bg.jpg') !important;
     background-size: cover !important;
     background-position: center top !important; 
     z-index: -1 !important;
     pointer-events: none !important;
+    backdrop-filter: blur(3px) brightness(0.96) !important;
+    -webkit-backdrop-filter: blur(3px) brightness(0.96) !important;
+    filter: blur(3px) brightness(0.96) !important;
 }
 
 #main-screen { background: transparent !important; }
@@ -53,8 +55,8 @@ body.modal-open, #checkout-screen.modal-open {
 }
 #sweet-subtitle { margin: 8px 0 0 0; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: #373330; opacity: 0; }
 
-/* ================= КАРТОЧКИ КАТАЛОГА ================= */
-.catalog { padding: 0 16px; display: flex; flex-direction: column; gap: 24px; }
+/* ================= КАРТОЧКИ КАТАЛОГА (РАСШИРЕННЫЕ ПРОПОРЦИИ) ================= */
+.catalog { padding: 0 8px; display: flex; flex-direction: column; gap: 20px; }
 
 .product-card { 
     background: rgba(255, 255, 255, 0.82) !important;
@@ -64,12 +66,17 @@ body.modal-open, #checkout-screen.modal-open {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03), 0 20px 25px -5px rgba(0, 0, 0, 0.02) !important; 
 }
 .product-image { width: 100%; height: 220px; object-fit: cover; display: block; }
-.product-info-wrap { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
-.product-info { flex: 1; display: flex; flex-direction: column; align-items: flex-start; }
+/* СТРУКТУРА КАРТОЧКИ: ЗАГОЛОВОК СВЕРХУ, КНОПКИ И ЦЕНА ВНИЗУ */
+.product-info-wrap { 
+    padding: 14px 16px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+}
 
-.product-info h3 { 
-    margin: 0 0 4px 0; 
+.product-title { 
+    margin: 0; 
     font-family: 'Plus Jakarta Sans', sans-serif !important; 
     font-size: 18px; 
     font-weight: 800 !important; 
@@ -78,7 +85,20 @@ body.modal-open, #checkout-screen.modal-open {
     line-height: 1.2; 
 }
 
-/* 2. НОВАЯ КНОПКА «О ТОВАРЕ» МЕЖДУ НАЗВАНИЕМ И ЦЕНОЙ */
+.product-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.product-price-about {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+/* КНОПКА «О ДЕСЕРТЕ» С БРУТАЛЬНОЙ ЧЕРНОЙ ОБВОДКОЙ */
 .about-product-btn {
     background-color: #f39c12 !important;
     color: #ffffff !important;
@@ -86,15 +106,21 @@ body.modal-open, #checkout-screen.modal-open {
     font-weight: 600 !important;
     font-size: 13px !important;
     border-radius: 12px !important;
-    padding: 6px 12px !important;
-    border: none !important;
-    margin: 4px 0 8px 0 !important;
+    padding: 6px 14px !important;
+    border: 2px solid #000000 !important;
+    margin: 0 !important;
     cursor: pointer;
     transition: transform 0.1s ease;
 }
 .about-product-btn:active { transform: scale(0.95) !important; }
 
-.product-info p.product-price { margin: 0; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: #1e1611; }
+.product-price { 
+    margin: 0; 
+    font-family: 'Inter', sans-serif; 
+    font-size: 16px; 
+    font-weight: 600; 
+    color: #1e1611; 
+}
 
 /* ================= КНОПКИ И СЧЕТЧИКИ ================= */
 .action-container { position: relative; height: 42px; min-width: 120px; }
@@ -164,7 +190,7 @@ body.modal-open, #checkout-screen.modal-open {
 .drag-handle-area:active { cursor: grabbing; }
 .drag-handle { width: 36px; height: 4px; background: rgba(30, 22, 17, 0.15); border-radius: 2px; }
 
-/* ================= 3. ОКНО О ТОВАРЕ (ВЕРСТКА ПО ЭСКИЗУ) ================= */
+/* ================= ОКНО О ТОВАРЕ ================= */
 .product-info-sheet {
     backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;
     background: linear-gradient(180deg, rgba(253, 251, 247, 0.95) 0%, rgba(249, 246, 240, 0.95) 100%) !important;
@@ -226,7 +252,6 @@ body.modal-open, #checkout-screen.modal-open {
     margin-top: 0;
 }
 
-/* Таймлайн слоев десерта */
 .layers-timeline {
     position: relative;
     padding-left: 24px;
@@ -239,7 +264,7 @@ body.modal-open, #checkout-screen.modal-open {
     top: 6px;
     bottom: 6px;
     width: 2px;
-    background: rgba(243, 156, 18, 0.3); /* Полупрозрачная оранжевая линия */
+    background: rgba(243, 156, 18, 0.3);
 }
 .layer-item {
     position: relative;
@@ -253,16 +278,16 @@ body.modal-open, #checkout-screen.modal-open {
 .layer-item::before {
     content: '';
     position: absolute;
-    left: -23px; /* Центровка на линии */
+    left: -23px; 
     top: 10px; 
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #f39c12; /* Оранжевая точка */
+    background: #f39c12; 
     box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.2);
 }
 
-/* ================= КОРЗИНА (РАЗДЕЛЕНИЕ СОСТОЯНИЙ) ================= */
+/* ================= КОРЗИНА ================= */
 .cart-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
 .clear-cart-btn { 
     padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(0, 0, 0, 0.15) !important; 
@@ -355,7 +380,6 @@ input, textarea { caret-color: #1e1611 !important; }
 .picker-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.85); background: #1c1c1e !important; box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important; border-radius: 24px; padding: 20px; box-sizing: border-box; width: 90%; max-width: 360px; z-index: 300; opacity: 0; pointer-events: none; display: flex; flex-direction: column; }
 .picker-modal.active { pointer-events: all; }
 
-/* Контейнер барабанов */
 .picker-body { 
     display: flex !important;
     justify-content: space-between !important;
@@ -371,7 +395,6 @@ input, textarea { caret-color: #1e1611 !important; }
     -webkit-mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); 
 }
 
-/* Строгий хайлайт по центру (pointer-events: none - ОБЯЗАТЕЛЕН) */
 .picker-highlight { 
     position: absolute !important;
     top: 50% !important;
@@ -386,7 +409,6 @@ input, textarea { caret-color: #1e1611 !important; }
     z-index: 1 !important;
 }
 
-/* ФИЗИКА И СКРОЛЛ КОЛОНОК */
 .picker-column {
     height: 200px !important;
     overflow-y: scroll !important;
@@ -405,29 +427,10 @@ input, textarea { caret-color: #1e1611 !important; }
     display: none !important;
 }
 
-/* Изоляция колонок и баланс отступов внутри плашки */
-.wheel-date { 
-    width: 52% !important; 
-    text-align: left !important; 
-    padding-left: 10px !important; 
-    box-sizing: border-box !important; 
-    z-index: 2 !important; 
-}
-.wheel-hours { 
-    width: 24% !important; 
-    text-align: center !important; 
-    box-sizing: border-box !important; 
-    z-index: 2 !important; 
-}
-.wheel-minutes { 
-    width: 24% !important; 
-    text-align: center !important; 
-    padding-right: 6px !important; 
-    box-sizing: border-box !important; 
-    z-index: 2 !important; 
-}
+.wheel-date { width: 52% !important; text-align: left !important; padding-left: 10px !important; box-sizing: border-box !important; z-index: 2 !important; }
+.wheel-hours { width: 24% !important; text-align: center !important; box-sizing: border-box !important; z-index: 2 !important; }
+.wheel-minutes { width: 24% !important; text-align: center !important; padding-right: 6px !important; box-sizing: border-box !important; z-index: 2 !important; }
 
-/* Фиксация элементов внутри барабана и дорогая типографика */
 .picker-item { 
     height: 44px !important;
     line-height: 44px !important;
