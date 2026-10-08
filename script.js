@@ -1,7 +1,6 @@
 const tg = window.Telegram?.WebApp;
 if(tg) {
     tg.expand();
-    // Блокировка случайного закрытия Web App по свайпу вниз
     if (tg.disableVerticalSwipes) {
         tg.disableVerticalSwipes();
     }
@@ -151,28 +150,25 @@ function updateCartUI() {
 }
 
 function renderCartSheet(totalPrice, totalCount) {
-    const list = document.getElementById('cart-items-list');
-    const totals = document.getElementById('cart-totals-block');
-    const mainBtn = document.getElementById('cart-main-action-btn');
+    const filledContent = document.getElementById('cart-content-filled');
+    const emptyContent = document.getElementById('cart-content-empty');
     const headerBtn = document.getElementById('clear-cart-btn');
-    const emptyMsg = document.getElementById('empty-cart-message');
 
+    // КОРЗИНА ПУСТА
     if (totalCount === 0) {
-        list.style.display = 'none';
-        totals.style.display = 'none';
-        mainBtn.style.display = 'none';
+        filledContent.style.display = 'none';
+        emptyContent.style.display = 'flex';
         headerBtn.style.display = 'none';
-        emptyMsg.style.display = 'flex';
         if(tg?.MainButton) tg.MainButton.hide();
         return;
     }
 
-    list.style.display = 'block';
-    totals.style.display = 'block';
-    mainBtn.style.display = 'block';
+    // В КОРЗИНЕ ЕСТЬ ТОВАРЫ
+    filledContent.style.display = 'block';
+    emptyContent.style.display = 'none';
     headerBtn.style.display = 'block';
-    emptyMsg.style.display = 'none';
 
+    const list = document.getElementById('cart-items-list');
     list.innerHTML = '';
     for (let id in cart) {
         if (cart[id] > 0) {
@@ -238,10 +234,15 @@ function openCartSheet() {
     renderCartSheet(totalPrice, totalCount);
 }
 
-// Виброотклик и закрытие пустой корзины
 function closeCartWithHaptic() {
-    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-    closeAllSheets();
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+    const cartSheet = document.getElementById('cart-screen');
+    cartSheet.classList.remove('active');
+    gsap.to(cartSheet, { y: "100%", duration: 0.4, ease: "power2.inOut", onComplete: () => {
+        closeAllSheets();
+    }});
 }
 
 function goToCheckout() {
@@ -369,20 +370,19 @@ function initKeyboardHandling() {
         });
     });
 
-    // Автоскролл: поднятие инпутов над клавиатурой
-    document.querySelectorAll('#checkout-screen input').forEach(input => {
+    document.querySelectorAll('#checkout-screen input, #checkout-screen textarea').forEach(input => {
         input.addEventListener('focus', (e) => {
             if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
             const sheet = document.getElementById('checkout-screen');
-            sheet.style.paddingBottom = '320px';
+            sheet.style.paddingBottom = '350px';
             setTimeout(() => {
                 e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 300);
+            }, 250);
         });
         
         input.addEventListener('blur', () => {
             const sheet = document.getElementById('checkout-screen');
-            sheet.style.paddingBottom = '24px'; 
+            sheet.style.paddingBottom = '20px'; 
         });
     });
 }

@@ -14,7 +14,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     
-    <link rel="stylesheet" href="style.css">
+    <!-- Сброс кэша: версия 2.0 -->
+    <link rel="stylesheet" href="style.css?v=2.0">
 </head>
 <body>
 
@@ -39,19 +40,22 @@
             <button class="clear-cart-btn" id="clear-cart-btn" onclick="clearCart(event)">Очистить</button>
         </div>
         
-        <div id="cart-items-list"></div>
-        
-        <div class="cart-totals" id="cart-totals-block">
-            <div class="total-row"><span>Товары</span><span id="cart-subtotal">0 ₽</span></div>
-            <div class="total-row"><span>Доставка</span><span>0 ₽</span></div>
-            <hr class="total-divider">
-            <div class="total-row grand-total"><span>К оплате</span><span id="cart-grandtotal">0 ₽</span></div>
+        <!-- СОСТОЯНИЕ 1: КОРЗИНА ЗАПОЛНЕНА -->
+        <div id="cart-content-filled">
+            <div id="cart-items-list"></div>
+            
+            <div class="cart-totals" id="cart-totals-block">
+                <div class="total-row"><span>Товары</span><span id="cart-subtotal">0 ₽</span></div>
+                <div class="total-row"><span>Доставка</span><span>0 ₽</span></div>
+                <hr class="total-divider">
+                <div class="total-row grand-total"><span>К оплате</span><span id="cart-grandtotal">0 ₽</span></div>
+            </div>
+            
+            <button class="main-action-btn shimmer-btn" id="cart-main-action-btn" onclick="goToCheckout()">Перейти к оформлению</button>
         </div>
-        
-        <button class="main-action-btn shimmer-btn" id="cart-main-action-btn" onclick="goToCheckout()">Перейти к оформлению</button>
 
-        <!-- Пустое состояние корзины -->
-        <div id="empty-cart-message" class="empty-cart-state" style="display: none;">
+        <!-- СОСТОЯНИЕ 2: КОРЗИНА ПУСТАЯ -->
+        <div id="cart-content-empty" class="cart-content-empty">
             <div class="empty-cart-center">
                 <h2 class="empty-cart-title">Ваша корзина пуста 🧁</h2>
             </div>
@@ -106,13 +110,14 @@
     <div class="picker-modal" id="picker-modal">
         <div class="picker-body">
             <div class="picker-highlight"></div>
-            <div class="picker-wheel wheel-date" id="wheel-date"></div>
-            <div class="picker-wheel wheel-time" id="wheel-hours"></div>
-            <div class="picker-wheel wheel-time" id="wheel-minutes"></div>
+            <div class="picker-column wheel-date" id="wheel-date"></div>
+            <div class="picker-column wheel-time" id="wheel-hours"></div>
+            <div class="picker-column wheel-time" id="wheel-minutes"></div>
         </div>
         <button class="picker-done-btn-bottom" onclick="closePickerAndSave()">Готово</button>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Сброс кэша: версия 2.0 -->
+    <script src="script.js?v=2.0"></script>
 </body>
 </html>

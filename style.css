@@ -116,18 +116,22 @@ body {
     transform: translateY(100%); 
     transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.2, 1), padding-bottom 0.3s ease; 
     z-index: 200; 
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch; 
     touch-action: pan-y; 
     box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.1) !important;
 }
 .bottom-sheet.active { transform: translateY(0); }
 
+#checkout-screen {
+    overflow-y: auto !important;
+    max-height: 85vh !important;
+    -webkit-overflow-scrolling: touch;
+}
+
 .drag-handle-area { padding: 12px 0 20px; cursor: grab; display: flex; justify-content: center; }
 .drag-handle-area:active { cursor: grabbing; }
 .drag-handle { width: 36px; height: 4px; background: rgba(30, 22, 17, 0.15); border-radius: 2px; }
 
-/* ================= КОРЗИНА И ЕЕ ПУСТОЕ СОСТОЯНИЕ ================= */
+/* ================= КОРЗИНА (РАЗДЕЛЕНИЕ СОСТОЯНИЙ) ================= */
 .cart-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
 .clear-cart-btn { 
     padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(0, 0, 0, 0.15) !important; 
@@ -136,13 +140,17 @@ body {
 }
 .clear-cart-btn:active { transform: scale(0.95); background: rgba(30, 22, 17, 0.1) !important; }
 
-/* Пустая корзина: Flex-растяжка и выравнивание */
 @keyframes fadeInMsg { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.empty-cart-state { 
-    display: flex; 
-    flex-direction: column; 
-    justify-content: space-between; 
-    min-height: 380px; 
+
+/* Взаимоисключающие блоки корзины */
+#cart-content-filled { display: none; } /* Управляется скриптом */
+
+.cart-content-empty { 
+    display: none; /* Управляется скриптом */
+    flex-direction: column !important; 
+    justify-content: space-between !important; 
+    min-height: 320px !important; 
+    width: 100% !important;
     animation: fadeInMsg 0.4s ease; 
 }
 .empty-cart-center {
@@ -159,7 +167,10 @@ body {
     text-align: center; 
     margin: 0; 
 }
-#return-menu-btn { margin-top: auto; }
+#return-menu-btn { 
+    margin-top: auto !important; 
+    width: 100% !important; 
+}
 
 .cart-item { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .cart-item-img { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
@@ -182,7 +193,6 @@ body {
 #checkout-total { font-family: 'Inter', sans-serif; margin: 8px 0 0; font-size: 16px; font-weight: 500; color: #666; }
 .input-group { margin-bottom: 12px; position: relative; }
 
-/* Контрастная палочка курсора для всех инпутов */
 input, textarea { caret-color: #1e1611 !important; }
 
 .input-group input { 
@@ -207,15 +217,70 @@ input, textarea { caret-color: #1e1611 !important; }
 /* ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН ================= */
 .picker-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.65) !important; backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important; z-index: 290; opacity: 0; pointer-events: none; }
 .picker-overlay.active { pointer-events: all; }
+
 .picker-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.85); background: #1c1c1e !important; box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important; border-radius: 24px; padding: 20px; box-sizing: border-box; width: 90%; max-width: 360px; z-index: 300; opacity: 0; pointer-events: none; display: flex; flex-direction: column; }
 .picker-modal.active { pointer-events: all; }
-.picker-body { position: relative; height: 180px; display: flex; justify-content: center; mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); -webkit-mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); }
-.picker-highlight { position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%); height: 44px; background: rgba(255,255,255,0.08); border-radius: 8px; pointer-events: none; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
-.picker-wheel { overflow-y: scroll; scroll-snap-type: y mandatory; padding: 68px 0; scrollbar-width: none; }
-.picker-wheel::-webkit-scrollbar { display: none; }
-.wheel-date { flex: 1.5; text-align: left; padding-left: 10px; }
-.wheel-time { flex: 1; text-align: center; }
-.picker-item { height: 44px; line-height: 44px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.4); scroll-snap-align: center; transition: opacity 0.2s, transform 0.2s, color 0.2s; }
+
+/* Контейнер барабанов */
+.picker-body { 
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    height: 180px !important;
+    position: relative !important;
+    mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); 
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); 
+}
+
+/* Строгий хайлайт по центру (pointer-events: none - ОБЯЗАТЕЛЕН) */
+.picker-highlight { 
+    height: 44px !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: translateY(-50%) !important;
+    pointer-events: none !important;
+    background: rgba(255,255,255,0.08); 
+    border-radius: 8px; 
+    border-top: 1px solid rgba(255,255,255,0.05); 
+    border-bottom: 1px solid rgba(255,255,255,0.05); 
+}
+
+/* ФИЗИКА И СКРОЛЛ КОЛОНОК */
+.picker-column {
+    height: 180px !important;
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    scroll-behavior: smooth !important;
+    scroll-snap-type: y mandatory !important;
+    scrollbar-width: none !important;
+    padding: 68px 0 !important; /* (180 - 44) / 2 = 68 */
+}
+.picker-column::-webkit-scrollbar {
+    display: none !important;
+}
+
+/* Изоляция колонок */
+.wheel-date { width: 48% !important; text-align: left !important; padding-left: 5px !important; }
+.wheel-hours { width: 26% !important; text-align: center !important; }
+.wheel-minutes { width: 26% !important; text-align: center !important; }
+
+/* Фиксация элементов внутри барабана */
+.picker-item { 
+    height: 44px !important;
+    line-height: 44px !important;
+    font-size: 15px !important;
+    white-space: nowrap !important;
+    font-family: 'Inter', sans-serif; 
+    font-weight: 500; 
+    color: rgba(255,255,255,0.4); 
+    scroll-snap-align: center !important; 
+    transition: opacity 0.2s, transform 0.2s, color 0.2s; 
+}
 .picker-item.active { color: #ffffff; font-weight: 600; transform: scale(1.05); }
+
 .picker-done-btn-bottom { background: #ffffff !important; color: #000000 !important; font-weight: 600; font-family: 'Inter', sans-serif; border-radius: 16px; padding: 14px 0; margin-top: 15px; width: 100%; border: none; font-size: 16px; cursor: pointer; transition: transform 0.1s; }
 .picker-done-btn-bottom:active { transform: scale(0.96); }
