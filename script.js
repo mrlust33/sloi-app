@@ -1,5 +1,11 @@
 const tg = window.Telegram?.WebApp;
-if(tg) tg.expand();
+if(tg) {
+    tg.expand();
+    // Блокировка случайного закрытия Web App по свайпу вниз
+    if (tg.disableVerticalSwipes) {
+        tg.disableVerticalSwipes();
+    }
+}
 
 const products = [
     { id: 1, name: "Трайфл «Банан-Клубника»", price: 1500, img: "banan.jpg" },
@@ -146,25 +152,26 @@ function updateCartUI() {
 
 function renderCartSheet(totalPrice, totalCount) {
     const list = document.getElementById('cart-items-list');
-    const totals = document.querySelector('.cart-totals');
-    const emptyMsg = document.getElementById('empty-cart-message');
+    const totals = document.getElementById('cart-totals-block');
     const mainBtn = document.getElementById('cart-main-action-btn');
+    const headerBtn = document.getElementById('clear-cart-btn');
+    const emptyMsg = document.getElementById('empty-cart-message');
 
     if (totalCount === 0) {
         list.style.display = 'none';
         totals.style.display = 'none';
+        mainBtn.style.display = 'none';
+        headerBtn.style.display = 'none';
         emptyMsg.style.display = 'flex';
-        mainBtn.innerText = 'Вернуться в меню';
-        mainBtn.onclick = closeAllSheets;
         if(tg?.MainButton) tg.MainButton.hide();
         return;
     }
 
     list.style.display = 'block';
     totals.style.display = 'block';
+    mainBtn.style.display = 'block';
+    headerBtn.style.display = 'block';
     emptyMsg.style.display = 'none';
-    mainBtn.innerText = 'Перейти к оформлению';
-    mainBtn.onclick = goToCheckout;
 
     list.innerHTML = '';
     for (let id in cart) {
@@ -194,7 +201,6 @@ function renderCartSheet(totalPrice, totalCount) {
     if(tg?.MainButton) tg.MainButton.setText(`Оплатить ${totalPrice} ₽`);
 }
 
-// 1. ИСПРАВЛЕНИЕ: ПРАВИЛЬНАЯ ОЧИСТКА И ПЕРЕРИСОВКА (без закрытия шторки)
 function clearCart(event) {
     if (event) event.preventDefault();
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
@@ -230,6 +236,12 @@ function openCartSheet() {
         }
     }
     renderCartSheet(totalPrice, totalCount);
+}
+
+// Виброотклик и закрытие пустой корзины
+function closeCartWithHaptic() {
+    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    closeAllSheets();
 }
 
 function goToCheckout() {
@@ -346,31 +358,35 @@ function initBottomSheetSwipe(sheetId, handleAreaId) {
     window.addEventListener('mouseup', onDragEnd);
 }
 
-// 2. УМНОЕ УПРАВЛЕНИЕ КЛАВИАТУРОЙ (АВТОСКРЫТИЕ И ТАП ПО ФОНУ)
 function initKeyboardHandling() {
-    // Скрытие по тапу на свободное место шторки
     document.querySelectorAll('.bottom-sheet').forEach(sheet => {
         sheet.addEventListener('click', (e) => {
-            // Если кликнули мимо инпутов (в саму шторку или заголовки)
             if (e.target === sheet || e.target.classList.contains('checkout-header') || e.target.classList.contains('cart-header')) {
                 if (document.activeElement && document.activeElement.tagName === 'INPUT') {
-                    document.activeElement.blur(); // Принудительное скрытие клавиатуры
+                    document.activeElement.blur(); 
                 }
             }
         });
     });
 
-    // Нативный хук: если TG поддерживает SettingsButton, можно привязать к ней скрытие, 
-    // но blur() гарантированно роняет клавиатуру на iOS и Android внутри WebView
-    document.querySelectorAll('input').forEach(input => {
-        input.addEventListener('focus', () => {
-            // Резервный вызов для нативных механик
+    // Автоскролл: поднятие инпутов над клавиатурой
+    document.querySelectorAll('#checkout-screen input').forEach(input => {
+        input.addEventListener('focus', (e) => {
             if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
+            const sheet = document.getElementById('checkout-screen');
+            sheet.style.paddingBottom = '320px';
+            setTimeout(() => {
+                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        });
+        
+        input.addEventListener('blur', () => {
+            const sheet = document.getElementById('checkout-screen');
+            sheet.style.paddingBottom = '24px'; 
         });
     });
 }
 
-// 3. ЛОГИКА ПЕРЕХОДА ПО КНОПКЕ «ENTER / ДАЛЕЕ»
 function initEnterNavigation() {
     const inputIds = ['username', 'phone', 'street', 'house', 'entrance', 'floor', 'flat', 'comment'];
     
@@ -383,7 +399,7 @@ function initEnterNavigation() {
                     if (index < inputIds.length - 1) {
                         document.getElementById(inputIds[index + 1]).focus();
                     } else {
-                        el.blur(); // Последнее поле - убираем клаву
+                        el.blur();
                     }
                 }
             });
@@ -411,7 +427,6 @@ function initPhoneMask() {
             e.target.value = '+' + input.substring(0, 15);
         }
 
-        // АВТОСКРЫТИЕ ПРИ ПОЛНОМ ЗАПОЛНЕНИИ: +7 (999) 999-99-99 (18 символов)
         if (e.target.value.length === 18) {
             e.target.blur();
         }
@@ -515,7 +530,7 @@ function initPickerScroll() {
 
 function openPicker() {
     if (document.activeElement && document.activeElement.tagName === 'INPUT') {
-        document.activeElement.blur(); // Прячем клаву при открытии барабана
+        document.activeElement.blur(); 
     }
 
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');

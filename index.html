@@ -34,19 +34,14 @@
         <div class="drag-handle-area" id="drag-handle-cart">
             <div class="drag-handle"></div>
         </div>
-        <div class="cart-header">
+        <div class="cart-header" id="cart-header-block">
             <h1 class="cart-title">Корзина</h1>
-            <button class="clear-cart-btn" onclick="clearCart(event)">Очистить</button>
+            <button class="clear-cart-btn" id="clear-cart-btn" onclick="clearCart(event)">Очистить</button>
         </div>
         
         <div id="cart-items-list"></div>
         
-        <!-- Пустое состояние корзины -->
-        <div id="empty-cart-message" class="empty-cart-state" style="display: none;">
-            <h2 class="empty-cart-title">Ваша корзина пуста 🧁</h2>
-        </div>
-        
-        <div class="cart-totals">
+        <div class="cart-totals" id="cart-totals-block">
             <div class="total-row"><span>Товары</span><span id="cart-subtotal">0 ₽</span></div>
             <div class="total-row"><span>Доставка</span><span>0 ₽</span></div>
             <hr class="total-divider">
@@ -54,6 +49,14 @@
         </div>
         
         <button class="main-action-btn shimmer-btn" id="cart-main-action-btn" onclick="goToCheckout()">Перейти к оформлению</button>
+
+        <!-- Пустое состояние корзины -->
+        <div id="empty-cart-message" class="empty-cart-state" style="display: none;">
+            <div class="empty-cart-center">
+                <h2 class="empty-cart-title">Ваша корзина пуста 🧁</h2>
+            </div>
+            <button class="main-action-btn shimmer-btn" id="return-menu-btn" onclick="closeCartWithHaptic()">Вернуться в меню</button>
+        </div>
     </div>
 
     <!-- ШТОРКА 2: ОФОРМЛЕНИЕ ЗАКАЗА -->
