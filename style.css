@@ -1,22 +1,30 @@
 /* ================= ОСНОВНЫЕ СТИЛИ И ФОН ================= */
 body { 
     font-family: 'Inter', sans-serif; 
-    background-image: url('bg.jpg') !important;
-    background-size: cover !important;
-    background-position: center !important;
-    background-attachment: fixed !important;
-    background-repeat: no-repeat !important;
     background-color: #F8F6F0; 
     color: #1A1A1A; 
     margin: 0; padding: 0; padding-bottom: 120px; 
     -webkit-tap-highlight-color: transparent;
     -webkit-overflow-scrolling: touch; 
     min-height: 100vh;
+    /* Убрали background-attachment: fixed */
+}
+
+/* 1. ФИКСИРОВАННЫЙ МОБИЛЬНЫЙ ФОН ЧЕРЕЗ PSEUDO-ELEMENT */
+body::before {
+    content: "" !important;
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important;
+    background-image: url('bg.jpg') !important;
+    background-size: cover !important;
+    background-position: center top !important; 
+    z-index: -1 !important;
+    pointer-events: none !important;
 }
 
 #main-screen { background: transparent !important; }
 
-/* Блокировка фона при открытом барабане */
 body.modal-open, #checkout-screen.modal-open {
     overflow: hidden !important;
     touch-action: none !important;
@@ -58,6 +66,8 @@ body.modal-open, #checkout-screen.modal-open {
 .product-image { width: 100%; height: 220px; object-fit: cover; display: block; }
 .product-info-wrap { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
+.product-info { flex: 1; display: flex; flex-direction: column; align-items: flex-start; }
+
 .product-info h3 { 
     margin: 0 0 4px 0; 
     font-family: 'Plus Jakarta Sans', sans-serif !important; 
@@ -67,7 +77,24 @@ body.modal-open, #checkout-screen.modal-open {
     color: #1e1611 !important; 
     line-height: 1.2; 
 }
-.product-info p { margin: 0; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: #1e1611; }
+
+/* 2. НОВАЯ КНОПКА «О ТОВАРЕ» МЕЖДУ НАЗВАНИЕМ И ЦЕНОЙ */
+.about-product-btn {
+    background-color: #f39c12 !important;
+    color: #ffffff !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    border-radius: 12px !important;
+    padding: 6px 12px !important;
+    border: none !important;
+    margin: 4px 0 8px 0 !important;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+.about-product-btn:active { transform: scale(0.95) !important; }
+
+.product-info p.product-price { margin: 0; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: #1e1611; }
 
 /* ================= КНОПКИ И СЧЕТЧИКИ ================= */
 .action-container { position: relative; height: 42px; min-width: 120px; }
@@ -136,6 +163,104 @@ body.modal-open, #checkout-screen.modal-open {
 .drag-handle-area { padding: 12px 0 20px; cursor: grab; display: flex; justify-content: center; }
 .drag-handle-area:active { cursor: grabbing; }
 .drag-handle { width: 36px; height: 4px; background: rgba(30, 22, 17, 0.15); border-radius: 2px; }
+
+/* ================= 3. ОКНО О ТОВАРЕ (ВЕРСТКА ПО ЭСКИЗУ) ================= */
+.product-info-sheet {
+    backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;
+    background: linear-gradient(180deg, rgba(253, 251, 247, 0.95) 0%, rgba(249, 246, 240, 0.95) 100%) !important;
+}
+
+.product-info-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    width: 100%; padding: 10px 0 20px; box-sizing: border-box;
+}
+
+.product-info-title-wrap {
+    flex: 1; padding-right: 16px;
+}
+
+.product-info-title {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 800 !important;
+    color: #1e1611 !important;
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+    margin: 0;
+}
+
+.product-info-weight {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    background: rgba(0,0,0,0.06);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #555;
+    display: inline-block;
+    margin-top: 8px;
+}
+
+.product-info-image {
+    width: 110px !important;
+    height: 110px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.06) !important;
+    flex-shrink: 0;
+}
+
+.product-info-desc {
+    font-family: 'Inter', sans-serif;
+    color: #4b4440;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.product-info-layers-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: #221a15;
+    margin-bottom: 14px;
+    margin-top: 0;
+}
+
+/* Таймлайн слоев десерта */
+.layers-timeline {
+    position: relative;
+    padding-left: 24px;
+    margin-bottom: 24px;
+}
+.layers-timeline::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: rgba(243, 156, 18, 0.3); /* Полупрозрачная оранжевая линия */
+}
+.layer-item {
+    position: relative;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4b4440;
+    padding: 6px 0;
+    line-height: 1.4;
+}
+.layer-item::before {
+    content: '';
+    position: absolute;
+    left: -23px; /* Центровка на линии */
+    top: 10px; 
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f39c12; /* Оранжевая точка */
+    box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.2);
+}
 
 /* ================= КОРЗИНА (РАЗДЕЛЕНИЕ СОСТОЯНИЙ) ================= */
 .cart-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
@@ -235,11 +360,11 @@ input, textarea { caret-color: #1e1611 !important; }
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    width: 100% !important;
-    height: 200px !important;
     position: relative !important;
     padding: 0 14px !important;
     box-sizing: border-box !important;
+    width: 100% !important;
+    height: 200px !important;
     overscroll-behavior: contain !important;
     overscroll-behavior-y: contain !important;
     mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); 
@@ -255,10 +380,8 @@ input, textarea { caret-color: #1e1611 !important; }
     width: calc(100% - 16px) !important;
     height: 44px !important;
     transform: translateY(-50%) !important;
-    background: rgba(255,255,255,0.12) !important; 
+    background: rgba(255, 255, 255, 0.12) !important; 
     border-radius: 10px !important; 
-    border-top: 1px solid rgba(255,255,255,0.05) !important; 
-    border-bottom: 1px solid rgba(255,255,255,0.05) !important; 
     pointer-events: none !important;
     z-index: 1 !important;
 }
@@ -271,7 +394,7 @@ input, textarea { caret-color: #1e1611 !important; }
     touch-action: pan-y !important;
     scroll-snap-type: y mandatory !important;
     scrollbar-width: none !important;
-    padding: 78px 0 !important; /* (200 - 44) / 2 */
+    padding: 78px 0 !important; 
     box-sizing: border-box !important;
     position: relative !important;
     z-index: 2 !important;
@@ -289,14 +412,12 @@ input, textarea { caret-color: #1e1611 !important; }
     padding-left: 10px !important; 
     box-sizing: border-box !important; 
     z-index: 2 !important; 
-    position: relative !important; 
 }
 .wheel-hours { 
     width: 24% !important; 
     text-align: center !important; 
     box-sizing: border-box !important; 
     z-index: 2 !important; 
-    position: relative !important; 
 }
 .wheel-minutes { 
     width: 24% !important; 
@@ -304,7 +425,6 @@ input, textarea { caret-color: #1e1611 !important; }
     padding-right: 6px !important; 
     box-sizing: border-box !important; 
     z-index: 2 !important; 
-    position: relative !important; 
 }
 
 /* Фиксация элементов внутри барабана и дорогая типографика */

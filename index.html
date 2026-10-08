@@ -14,8 +14,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     
-    <!-- Сброс кэша: версия 3.0 -->
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <!-- Сброс кэша: версия 4.0 -->
+    <link rel="stylesheet" href="style.css?v=4.0">
 </head>
 <body>
 
@@ -40,7 +40,6 @@
             <button class="clear-cart-btn" id="clear-cart-btn" onclick="clearCart(event)">Очистить</button>
         </div>
         
-        <!-- СОСТОЯНИЕ 1: КОРЗИНА ЗАПОЛНЕНА -->
         <div id="cart-content-filled">
             <div id="cart-items-list"></div>
             
@@ -54,7 +53,6 @@
             <button class="main-action-btn shimmer-btn" id="cart-main-action-btn" onclick="goToCheckout()">Перейти к оформлению</button>
         </div>
 
-        <!-- СОСТОЯНИЕ 2: КОРЗИНА ПУСТАЯ -->
         <div id="cart-content-empty" class="cart-content-empty">
             <div class="empty-cart-center">
                 <h2 class="empty-cart-title">Ваша корзина пуста 🧁</h2>
@@ -100,6 +98,26 @@
         <p class="marketing-trigger">✨ Десерты начнут готовиться сразу после подтверждения</p>
     </div>
 
+    <!-- ШТОРКА 3: О ТОВАРЕ (НОВАЯ) -->
+    <div class="bottom-sheet product-info-sheet" id="product-info-screen">
+        <div class="drag-handle-area" id="drag-handle-info">
+            <div class="drag-handle"></div>
+        </div>
+        <div class="product-info-header">
+            <div class="product-info-title-wrap">
+                <h2 class="product-info-title" id="info-title">Название</h2>
+                <div class="product-info-weight">300 г</div>
+            </div>
+            <img src="" class="product-info-image" id="info-img" alt="">
+        </div>
+        <div class="product-info-desc" id="info-desc"></div>
+        
+        <h3 class="product-info-layers-title">Слои десерта</h3>
+        <div class="layers-timeline" id="info-layers"></div>
+        
+        <button class="main-action-btn shimmer-btn" id="info-add-btn">Добавить в корзину</button>
+    </div>
+
     <!-- ПЛАВАЮЩАЯ КНОПКА КОРЗИНЫ -->
     <div class="floating-cart-btn shimmer-btn" id="floating-cart-btn" onclick="openCartSheet()">
         Посмотреть корзину &bull; <span id="cart-total-count">0</span> шт
@@ -117,7 +135,7 @@
         <button class="picker-done-btn-bottom" onclick="closePickerAndSave()">Готово</button>
     </div>
 
-    <!-- Сброс кэша: версия 3.0 -->
-    <script src="script.js?v=3.0"></script>
+    <!-- Сброс кэша: версия 4.0 -->
+    <script src="script.js?v=4.0"></script>
 </body>
 </html>

@@ -6,10 +6,32 @@ if(tg) {
     }
 }
 
+// ДОБАВЛЕНЫ ОПИСАНИЯ И СЛОИ ДЛЯ ОКНА «О ТОВАРЕ»
 const products = [
-    { id: 1, name: "Трайфл «Банан-Клубника»", price: 1500, img: "banan.jpg" },
-    { id: 2, name: "Трайфл «Вишня с шоколадом»", price: 1500, img: "vishny.jpg" },
-    { id: 3, name: "Трайфл «Клубника»", price: 1500, img: "klubnika.jpg" }
+    { 
+        id: 1, 
+        name: "Трайфл «Банан-Клубника»", 
+        price: 1500, 
+        img: "banan.jpg",
+        desc: "Идеальное сочетание спелого банана и сладкой клубники. Мягкие слои воздушного бисквита в тандеме с нежным кремом создают неповторимую легкость каждого кусочка.",
+        layers: ["Воздушный ванильный бисквит", "Нежный сливочный крем-чиз", "Кусочки спелого банана", "Ягодный мусс из спелой клубники"]
+    },
+    { 
+        id: 2, 
+        name: "Трайфл «Вишня с шоколадом»", 
+        price: 1500, 
+        img: "vishny.jpg",
+        desc: "Утонченный десерт для любителей шоколада. Терпкость темного бельгийского шоколада превосходно оттеняется пряной вишневой начинкой с легкой кислинкой.",
+        layers: ["Насыщенный шоколадный брауни", "Мусс из темного бельгийского шоколада", "Пряная вишня с легкой кислинкой", "Хрустящая шоколадная стружка"]
+    },
+    { 
+        id: 3, 
+        name: "Трайфл «Клубника»", 
+        price: 1500, 
+        img: "klubnika.jpg",
+        desc: "Классическая нежность с ярким вкусом свежей клубники. Легкий молочный бисквит тает во рту, уступая место натуральному ягодному конфитюру и ванильному суфле.",
+        layers: ["Легкий молочный бисквит", "Ванильно-сливочный суфле-мусс", "Свежая клубника в собственном соку", "Натуральный клубничный конфитюр"]
+    }
 ];
 
 let cart = {};
@@ -39,12 +61,14 @@ function renderProducts() {
         card.className = 'product-card animate__animated animate__fadeInUp';
         card.style.animationDelay = `${index * 0.1}s`; 
         
+        // Добавлена новая оранжевая кнопка «О десерте»
         card.innerHTML = `
             <img src="${p.img}" class="product-image" alt="${p.name}">
             <div class="product-info-wrap">
                 <div class="product-info">
                     <h3>${p.name}</h3>
-                    <p>${p.price} ₽</p>
+                    <button class="about-product-btn" onclick="openProductInfo(${p.id})">О десерте</button>
+                    <p class="product-price">${p.price} ₽</p>
                 </div>
                 <div class="action-container" id="control-${p.id}">
                     <button class="add-btn" id="btn-add-${p.id}" onclick="handleFirstAdd(event, ${p.id})">В корзину</button>
@@ -58,6 +82,66 @@ function renderProducts() {
         `;
         container.appendChild(card);
     });
+}
+
+// ЛОГИКА ОТКРЫТИЯ ШТОРКИ «О ТОВАРЕ»
+function openProductInfo(id) {
+    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    
+    const p = products.find(prod => prod.id === id);
+    if(!p) return;
+
+    document.getElementById('info-title').innerText = p.name;
+    document.getElementById('info-img').src = p.img;
+    document.getElementById('info-desc').innerText = p.desc;
+    
+    const layersHtml = p.layers.map(layer => `<div class="layer-item">${layer}</div>`).join('');
+    document.getElementById('info-layers').innerHTML = layersHtml;
+    
+    const addBtn = document.getElementById('info-add-btn');
+    addBtn.innerText = `Добавить в корзину — ${p.price} ₽`;
+    addBtn.onclick = (e) => addFromInfoSheet(e, p.id);
+
+    document.getElementById('overlay').classList.add('active');
+    document.getElementById('product-info-screen').classList.add('active');
+    gsap.set('#product-info-screen', { y: 0 });
+}
+
+// ДОБАВЛЕНИЕ ИЗ ШТОРКИ О ТОВАРЕ (С ИСКРАМИ И СИНХРОНИЗАЦИЕЙ)
+function addFromInfoSheet(event, id) {
+    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    
+    const btn = event.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    const x = (rect.left + rect.width / 2) / window.innerWidth;
+    const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+    confetti({
+        particleCount: 16, spread: 45, startVelocity: 18, scalar: 0.9, ticks: 60,
+        origin: { x, y }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
+    });
+
+    if (!cart[id]) {
+        cart[id] = 1;
+        const addBtnMain = document.getElementById(`btn-add-${id}`);
+        const counterUI = document.getElementById(`counter-ui-${id}`);
+        
+        gsap.to(addBtnMain, { opacity: 0, duration: 0.2, onComplete: () => addBtnMain.classList.add('hidden') });
+        gsap.fromTo(counterUI, { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.5)", delay: 0.1 });
+        counterUI.classList.add('active');
+        document.getElementById(`count-${id}`).innerText = cart[id];
+    } else {
+        cart[id]++;
+        updateCounterNum(id, 1);
+    }
+    
+    updateCartUI();
+    
+    const infoSheet = document.getElementById('product-info-screen');
+    infoSheet.classList.remove('active');
+    gsap.to(infoSheet, { y: "100%", duration: 0.3, ease: "power2.out", onComplete: () => {
+        closeAllSheets();
+    }});
 }
 
 function handleFirstAdd(event, id) {
@@ -259,6 +343,7 @@ function closeAllSheets() {
     document.getElementById('overlay').classList.remove('active');
     document.getElementById('cart-screen').classList.remove('active');
     document.getElementById('checkout-screen').classList.remove('active');
+    document.getElementById('product-info-screen').classList.remove('active'); // Закрываем инфо о товаре
     
     if (isCartBtnVisible) {
         gsap.to('#floating-cart-btn', { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.5)" });
@@ -313,6 +398,7 @@ function sendDataToBot() {
 function initBottomSheetSwipe(sheetId, handleAreaId) {
     const sheet = document.getElementById(sheetId);
     const handleArea = document.getElementById(handleAreaId);
+    if(!sheet || !handleArea) return;
     
     let startY = 0;
     let currentY = 0;
@@ -534,7 +620,6 @@ function initPickerScroll() {
         });
     });
 
-    // Защита от скролла фона за пределами колонок
     const pickerModal = document.getElementById('picker-modal');
     const pickerOverlay = document.getElementById('picker-overlay');
     
@@ -553,7 +638,6 @@ function openPicker() {
         document.activeElement.blur(); 
     }
 
-    // Блокировка фона
     document.body.classList.add('modal-open');
     const checkoutSheet = document.getElementById('checkout-screen');
     if (checkoutSheet) checkoutSheet.classList.add('modal-open');
@@ -571,7 +655,6 @@ function openPicker() {
 }
 
 function closePickerAndSave() {
-    // Разблокировка фона
     document.body.classList.remove('modal-open');
     const checkoutSheet = document.getElementById('checkout-screen');
     if (checkoutSheet) checkoutSheet.classList.remove('modal-open');
@@ -638,5 +721,6 @@ initAnimations();
 initPhoneMask();
 initBottomSheetSwipe('cart-screen', 'drag-handle-cart');
 initBottomSheetSwipe('checkout-screen', 'drag-handle-checkout');
+initBottomSheetSwipe('product-info-screen', 'drag-handle-info'); // Доводчик для шторки инфо
 initKeyboardHandling();
 initEnterNavigation();
