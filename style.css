@@ -16,6 +16,12 @@ body {
 
 #main-screen { background: transparent !important; }
 
+/* Блокировка фона при открытом барабане */
+body.modal-open, #checkout-screen.modal-open {
+    overflow: hidden !important;
+    touch-action: none !important;
+}
+
 /* ================= БРУТАЛЬНЫЕ ЗАГОЛОВКИ ================= */
 .brand-title, .cart-title, .checkout-title { 
     margin: 0; 
@@ -234,11 +240,13 @@ input, textarea { caret-color: #1e1611 !important; }
     position: relative !important;
     padding: 0 14px !important;
     box-sizing: border-box !important;
+    overscroll-behavior: contain !important;
+    overscroll-behavior-y: contain !important;
     mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); 
     -webkit-mask-image: linear-gradient(to bottom, transparent, black 35%, black 65%, transparent); 
 }
 
-/* Строгий хайлайт по центру */
+/* Строгий хайлайт по центру (pointer-events: none - ОБЯЗАТЕЛЕН) */
 .picker-highlight { 
     position: absolute !important;
     top: 50% !important;
@@ -267,6 +275,8 @@ input, textarea { caret-color: #1e1611 !important; }
     box-sizing: border-box !important;
     position: relative !important;
     z-index: 2 !important;
+    overscroll-behavior: contain !important;
+    overscroll-behavior-y: contain !important;
 }
 .picker-column::-webkit-scrollbar {
     display: none !important;

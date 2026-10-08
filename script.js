@@ -525,7 +525,6 @@ function initPickerScroll() {
                 }
             }
 
-            // ЖЕСТКИЙ АВТОДОВОДЧИК БЕЗ НЕДОКРУТОВ
             window.clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => {
                 const itemHeight = 44;
@@ -534,12 +533,30 @@ function initPickerScroll() {
             }, 100);
         });
     });
+
+    // Защита от скролла фона за пределами колонок
+    const pickerModal = document.getElementById('picker-modal');
+    const pickerOverlay = document.getElementById('picker-overlay');
+    
+    const preventScroll = (e) => {
+        if (!e.target.closest('.picker-column')) {
+            e.preventDefault();
+        }
+    };
+    
+    if(pickerModal) pickerModal.addEventListener('touchmove', preventScroll, { passive: false });
+    if(pickerOverlay) pickerOverlay.addEventListener('touchmove', preventScroll, { passive: false });
 }
 
 function openPicker() {
     if (document.activeElement && document.activeElement.tagName === 'INPUT') {
         document.activeElement.blur(); 
     }
+
+    // Блокировка фона
+    document.body.classList.add('modal-open');
+    const checkoutSheet = document.getElementById('checkout-screen');
+    if (checkoutSheet) checkoutSheet.classList.add('modal-open');
 
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     
@@ -554,6 +571,11 @@ function openPicker() {
 }
 
 function closePickerAndSave() {
+    // Разблокировка фона
+    document.body.classList.remove('modal-open');
+    const checkoutSheet = document.getElementById('checkout-screen');
+    if (checkoutSheet) checkoutSheet.classList.remove('modal-open');
+
     if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     
     let dateWheel = document.getElementById('wheel-date');
