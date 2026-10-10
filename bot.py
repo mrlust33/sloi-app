@@ -3,14 +3,22 @@ import json
 import uuid
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import CommandStart
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, LabeledPrice, PreCheckoutQuery
+from aiogram.types import (
+    InlineKeyboardMarkup, InlineKeyboardButton, 
+    ReplyKeyboardMarkup, KeyboardButton, 
+    WebAppInfo
+)
 
 # Конфигурация проекта SweetSpot (СТРОГО БЕЗ ПРОБЕЛОВ В НАЧАЛЕ СТРОК)
 BOT_TOKEN = "8765647186:AAHSxInOny0IzDz5gRf83AX3wlszTRFgoXs"
-PROVIDER_TOKEN = "PROVIDER_TOKEN"
 ADMIN_ID = 5293518524
-SUPPORT_LINK = "https://t.me/M_be4"
+SUPPORT_LINK = "https://t.me"
 WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=6.0"
+
+# Реквизиты для перевода СБП
+SBP_PHONE = "+7 (977) 627-44-42"
+SBP_BANK = "Т-Банк / Сбербанк"
+SBP_RECEIVER = "Андрей А."
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -20,141 +28,159 @@ ORDERS_DB = {}
 
 @dp.message(CommandStart())
 async def command_start_handler(message: types.Message):
-    markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Открыть меню 🧁", web_app=WebAppInfo(url=WEB_APP_URL))],
+    # Нижняя Reply-клавиатура (гарантирует 100% срабатывание sendData)
+    reply_kb = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="Открыть меню 🧁", web_app=WebAppInfo(url=WEB_APP_URL))]],
+        resize_keyboard=True
+    )
+    
+    # Инлайн-клавиатура для поддержки
+    inline_kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Уточнить детали / Поддержка 💬", url=SUPPORT_LINK)]
     ])
     
+    await message.answer("Главное меню закреплено внизу экрана 👇", reply_markup=reply_kb)
     await message.answer(
-        "Доставка крафтовых десертов в ЖК Жулебино Парк. Ближайшая доставка: Суббота.",
-        reply_markup=markup
+        "SweetSpot | Доставка десертов\n"
+        "Премиальные трайфлы ручной работы. Доставляем свежие партии по субботам ✨",
+        reply_markup=inline_kb
     )
 
 # 1. ОБРАБОТЧИК ДАННЫХ ИЗ WEB APP
 @dp.message(F.web_app_data)
 async def web_app_data_handler(message: types.Message):
+    print(f"Получены данные заказа: {message.web_app_data.data}")
     try:
         data = json.loads(message.web_app_data.data)
-        cart = data.get('cart', [])
-        total_price = data.get('totalPrice', 0)
-        delivery_time = data.get('delivery_time', 'Не указано')
-        address = data.get('address', {})
-        phone = data.get('phone', 'Не указан')
-        
-        order_id = str(uuid.uuid4())[:8]
+        # Генерация ID без дефисов (надежно для callback_data)
+        order_id = uuid.uuid4().hex[:8].upper()
         ORDERS_DB[order_id] = data
         
-        items_text = "\n".join([f"• {item['name']} ({item['quantity']} шт.)" for item in cart])
-        
-        address_text = f"ул. {address.get('street', '')}, д. {address.get('house', '')}"
-        if address.get('entrance'): address_text += f", под. {address['entrance']}"
-        if address.get('floor'): address_text += f", эт. {address['floor']}"
-        if address.get('flat'): address_text += f", кв. {address['flat']}"
-        
-        receipt_text = (
-            f"🧁 **Заказ #{order_id} оформлен!**\n\n"
-            f"**Состав:**\n{items_text}\n\n"
-            f"**Доставка:** {delivery_time}\n"
-            f"**Адрес:** {address_text}\n"
-            f"**Телефон:** `{phone}`\n\n"
-            f"💰 **Итого к оплате:** {total_price} ₽\n\n"
-            f"Выбери удобный способ оплаты ниже 👇"
-        )
-        
-        payment_kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="💵 Наличными при получении", callback_data=f"cash_{order_id}")],
-            [InlineKeyboardButton(text="💳 Оплатить по СБП", callback_data=f"sbp_{order_id}")]
-        ])
-        
-        await message.answer(receipt_text, reply_markup=payment_kb, parse_mode="Markdown")
-        
+        await show_payment_options(message, order_id, data)
     except Exception as e:
-        await message.answer("❌ Произошла ошибка при формировании заказа. Пожалуйста, свяжитесь с поддержкой.")
+        await message.answer("❌ Произошла ошибка при обработке заказа. Обратитесь в поддержку.")
 
-# 2. ОБРАБОТКА ВЫБОРА: НАЛИЧНЫЕ
-@dp.callback_query(F.data.startswith("cash_"))
-async def process_cash_payment(callback: types.CallbackQuery):
-    order_id = callback.data.split("_")[1]
-    data = ORDERS_DB.get(order_id, {})
+async def show_payment_options(target, order_id, data):
+    cart = data.get('cart', [])
+    total_price = data.get('totalPrice', 0)
+    delivery_time = data.get('delivery_time', 'Не указано')
+    address = data.get('address', {})
+    phone = data.get('phone', 'Не указан')
+    
+    items_text = "\n".join([f"• {item['name']} ({item['quantity']} шт.)" for item in cart])
+    
+    address_text = f"ул. {address.get('street', '')}, д. {address.get('house', '')}"
+    if address.get('entrance'): address_text += f", под. {address['entrance']}"
+    if address.get('floor'): address_text += f", эт. {address['floor']}"
+    if address.get('flat'): address_text += f", кв. {address['flat']}"
+    
+    receipt_text = (
+        f"🧁 **Заказ #{order_id}**\n\n"
+        f"**Состав:**\n{items_text}\n\n"
+        f"**Доставка:** {delivery_time}\n"
+        f"**Адрес:** {address_text}\n"
+        f"**Телефон:** `{phone}`\n\n"
+        f"💰 **Итого к оплате:** {total_price} ₽\n\n"
+        f"Выберите способ оплаты 👇"
+    )
+    
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="⚡️ Оплатить по СБП", callback_data=f"pay_sbp_{order_id}")],
+        [InlineKeyboardButton(text="💵 Наличными при получении", callback_data=f"pay_cash_{order_id}")]
+    ])
+    
+    if isinstance(target, types.Message):
+        await target.answer(receipt_text, reply_markup=kb, parse_mode="Markdown")
+    else:
+        await target.message.edit_text(receipt_text, reply_markup=kb, parse_mode="Markdown")
+
+# КНОПКА "НАЗАД" В МЕНЮ ВЫБОРА ОПЛАТЫ
+@dp.callback_query(F.data.startswith("back_pay_"))
+async def back_to_payment(callback: types.CallbackQuery):
+    order_id = callback.data.replace("back_pay_", "")
+    data = ORDERS_DB.get(order_id)
     
     if not data:
         await callback.message.edit_text("❌ Сессия заказа истекла. Оформи заново в меню.")
-        return
+        return await callback.answer()
         
+    await show_payment_options(callback, order_id, data)
+    await callback.answer()
+
+# 2. СЦЕНАРИЙ: ОПЛАТИТЬ ПО СБП (РУЧНОЙ ПЕРЕВОД)
+@dp.callback_query(F.data.startswith("pay_sbp_"))
+async def process_sbp_selection(callback: types.CallbackQuery):
+    order_id = callback.data.replace("pay_sbp_", "")
+    data = ORDERS_DB.get(order_id)
+    
+    if not data:
+        await callback.message.edit_text("❌ Сессия заказа истекла. Оформи заново в меню.")
+        return await callback.answer()
+
+    total_price = data.get('totalPrice', 0)
+    
+    text = (
+        f"💳 **Оплата заказа #{order_id} через СБП**\n\n"
+        f"💰 **Сумма к переводу:** {total_price} ₽\n"
+        f"📱 **Номер телефона:** `{SBP_PHONE}` (нажмите, чтобы скопировать)\n"
+        f"🏦 **Банк:** {SBP_BANK}\n"
+        f"👤 **Получатель:** {SBP_RECEIVER}\n\n"
+        f"**Инструкция:**\n"
+        f"1. Скопируйте номер телефона и переведите {total_price} ₽ в приложении своего банка по СБП.\n"
+        f"2. После перевода нажмите кнопку «✅ Я оплатил(а)» ниже. Кондитер сверит поступление и подтвердит заказ! ✨"
+    )
+    
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Я оплатил(а)", callback_data=f"sbp_done_{order_id}")],
+        [InlineKeyboardButton(text="« Назад к способам", callback_data=f"back_pay_{order_id}")]
+    ])
+    
+    await callback.message.edit_text(text, reply_markup=kb, parse_mode="Markdown")
+    await callback.answer()
+
+# УСПЕШНАЯ ОПЛАТА СБП (ПОДТВЕРЖДЕНИЕ КЛИЕНТОМ)
+@dp.callback_query(F.data.startswith("sbp_done_"))
+async def sbp_done_handler(callback: types.CallbackQuery):
+    order_id = callback.data.replace("sbp_done_", "")
+    data = ORDERS_DB.get(order_id)
+    
+    if not data:
+        await callback.message.edit_text("❌ Сессия заказа истекла. Оформи заново в меню.")
+        return await callback.answer()
+
     await callback.message.edit_text(
-        callback.message.text + "\n\n✅ **Способ оплаты:** Наличными при получении.\n"
-        "Наш кондитер уже связывается с вами для подтверждения заказа! ✨",
+        "⏳ **Платеж на проверке!** Кондитер уже сверяет поступление средств по выписке банка. "
+        "Скоро свяжемся с вами в личных сообщениях! ✨",
         parse_mode="Markdown"
     )
     
-    await send_admin_alert(order_id, data, "💵 НАЛИЧНЫМИ ПРИ ПОЛУЧЕНИИ")
+    await send_admin_alert(order_id, data, "[⚡️ ОПЛАЧЕНО ПО СБП (ПРОВЕРИТЬ БАНК)]")
+    del ORDERS_DB[order_id]
     await callback.answer()
 
-# 3. ОБРАБОТКА ВЫБОРА: СБП
-@dp.callback_query(F.data.startswith("sbp_"))
-async def process_sbp_payment(callback: types.CallbackQuery):
-    order_id = callback.data.split("_")[1]
-    data = ORDERS_DB.get(order_id, {})
+# 3. СЦЕНАРИЙ: НАЛИЧНЫМИ КУРЬЕРУ
+@dp.callback_query(F.data.startswith("pay_cash_"))
+async def process_cash_payment(callback: types.CallbackQuery):
+    order_id = callback.data.replace("pay_cash_", "")
+    data = ORDERS_DB.get(order_id)
     
     if not data:
         await callback.message.edit_text("❌ Сессия заказа истекла. Оформи заново в меню.")
-        return
-
-    cart = data.get('cart', [])
-    total_price = data.get('totalPrice', 0)
-    
-    items_text = ", ".join([f"{item['name']} x{item['quantity']}" for item in cart])
-    description = f"Премиальные трайфлы: {items_text}"
-    prices = [LabeledPrice(label="Сумма заказа", amount=int(total_price * 100))]
-    
-    await callback.message.delete()
-    
-    await bot.send_invoice(
-        chat_id=callback.message.chat.id,
-        title="Оплата заказа по СБП в SweetSpot",
-        description=description,
-        payload=order_id,
-        provider_token=PROVIDER_TOKEN,
-        currency="RUB",
-        prices=prices,
-        start_parameter="sweetspot_order",
-        need_name=False,
-        need_phone_number=False,
-        need_email=False,
-        need_shipping_address=False
+        return await callback.answer()
+        
+    await callback.message.edit_text(
+        f"✅ **Заказ #{order_id} подтвержден!**\n\n"
+        f"Способ оплаты: **Наличными при получении**.\n"
+        f"Наш кондитер скоро свяжется с вами для уточнения деталей! ✨",
+        parse_mode="Markdown"
     )
+    
+    await send_admin_alert(order_id, data, "[💵 НАЛИЧНЫМИ КУРЬЕРУ]")
+    del ORDERS_DB[order_id]
     await callback.answer()
 
-@dp.pre_checkout_query()
-async def pre_checkout_handler(pre_checkout_query: PreCheckoutQuery):
-    await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
-
-# 4. ОБРАБОТЧИК УСПЕШНОГО ПЛАТЕЖА ПО СБП
-@dp.message(F.successful_payment)
-async def successful_payment_handler(message: types.Message):
-    order_id = message.successful_payment.invoice_payload
-    data = ORDERS_DB.get(order_id, {})
-    
-    if not data:
-        await message.answer("Оплата прошла успешно, но данные сессии потеряны. Свяжитесь с поддержкой.")
-        return
-
-    cart = data.get('cart', [])
-    total_price = data.get('totalPrice', 0)
-    items_text = "\n".join([f"- {item['name']} x{item['quantity']}" for item in cart])
-    
-    await message.answer(
-        f"🎉 **Оплата успешно получена по СБП!** Спасибо за заказ.\n\n"
-        f"**Состав:**\n{items_text}\n\n"
-        f"**Сумма:** {total_price} ₽\n"
-        f"Скоро кондитер свяжется с вами!"
-    )
-    
-    await send_admin_alert(order_id, data, "💳 ОПЛАЧЕНО ПО СБП")
-    if order_id in ORDERS_DB:
-        del ORDERS_DB[order_id]
-
-async def send_admin_alert(order_id, data, method_name):
+# ОТПРАВКА УВЕДОМЛЕНИЯ АДМИНУ
+async def send_admin_alert(order_id, data, tag):
     cart = data.get('cart', [])
     address = data.get('address', {})
     total_price = data.get('totalPrice', 0)
@@ -164,25 +190,25 @@ async def send_admin_alert(order_id, data, method_name):
     
     items_text = "\n".join([f"- {item['name']} x{item['quantity']}" for item in cart])
     address_text = (
-        f"Ул. {address.get('street')}, д. {address.get('house')}, "
+        f"ул. {address.get('street')}, д. {address.get('house')}, "
         f"под. {address.get('entrance', '-')}, эт. {address.get('floor', '-')}, кв. {address.get('flat', '-')}"
     )
     comment = address.get('comment', 'Нет')
 
     admin_alert = (
-        f"🚨 **НОВЫЙ ЗАКАЗ #{order_id}**\n"
-        f"**Способ оплаты:** {method_name}\n"
-        f"**Клиент:** @{tg_username} | {phone}\n\n"
-        f"**Заказ:**\n{items_text}\n"
+        f"{tag}\n"
+        f"🚨 **Заказ #{order_id}**\n"
+        f"**Клиент:** @{tg_username} | `{phone}`\n\n"
+        f"**Состав:**\n{items_text}\n"
         f"**Сумма:** {total_price} ₽\n\n"
-        f"**Время доставки:** {delivery_time}\n"
+        f"**Время:** {delivery_time}\n"
         f"**Адрес:** {address_text}\n"
         f"**Комментарий:** {comment}"
     )
-    await bot.send_message(chat_id=ADMIN_ID, text=admin_alert)
+    await bot.send_message(chat_id=ADMIN_ID, text=admin_alert, parse_mode="Markdown")
 
 async def main():
-    print("Бот SweetSpot запущен без ошибок отступов!")
+    print("Бот SweetSpot запущен! Ручной СБП-терминал активирован.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
