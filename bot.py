@@ -5,12 +5,12 @@ from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import CommandStart
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, LabeledPrice, PreCheckoutQuery
 
-# Конфигурация (все твои токены и ID сохранены)
+# Конфигурация проекта SweetSpot (СТРОГО БЕЗ ПРОБЕЛОВ В НАЧАЛЕ СТРОК)
 BOT_TOKEN = "8765647186:AAHSxInOny0IzDz5gRf83AX3wlszTRFgoXs"
-PROVIDER_TOKEN = "PROVIDER_TOKEN"  # Сюда позже вставим рабочий токен ЮKassa под СБП
+PROVIDER_TOKEN = "PROVIDER_TOKEN"
 ADMIN_ID = 5293518524
-SUPPORT_LINK = "https://t.me"
-WEB_APP_URL = "https://github.io"
+SUPPORT_LINK = "https://t.me/M_be4"
+WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=6.0"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -30,7 +30,7 @@ async def command_start_handler(message: types.Message):
         reply_markup=markup
     )
 
-# 1. ОБРАБОТЧИК ДАННЫХ ИЗ WEB APP: Формируем стильный чек и кнопки выбора
+# 1. ОБРАБОТЧИК ДАННЫХ ИЗ WEB APP
 @dp.message(F.web_app_data)
 async def web_app_data_handler(message: types.Message):
     try:
@@ -41,20 +41,16 @@ async def web_app_data_handler(message: types.Message):
         address = data.get('address', {})
         phone = data.get('phone', 'Не указан')
         
-        # Генерируем короткий ID заказа и сохраняем JSON в память
         order_id = str(uuid.uuid4())[:8]
         ORDERS_DB[order_id] = data
         
-        # Формируем состав заказа списком для красивого чека
         items_text = "\n".join([f"• {item['name']} ({item['quantity']} шт.)" for item in cart])
         
-        # Собираем красивую строку адреса
         address_text = f"ул. {address.get('street', '')}, д. {address.get('house', '')}"
         if address.get('entrance'): address_text += f", под. {address['entrance']}"
         if address.get('floor'): address_text += f", эт. {address['floor']}"
         if address.get('flat'): address_text += f", кв. {address['flat']}"
         
-        # Текстовый чек точь-в-точь по твоему макету
         receipt_text = (
             f"🧁 **Заказ #{order_id} оформлен!**\n\n"
             f"**Состав:**\n{items_text}\n\n"
@@ -65,17 +61,11 @@ async def web_app_data_handler(message: types.Message):
             f"Выбери удобный способ оплаты ниже 👇"
         )
         
-        # Кнопки под сообщением: Наличные или СБП
         payment_kb = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(text="💵 Наличными при получении", callback_data=f"cash_{order_id}")
-            ],
-            [
-                InlineKeyboardButton(text="💳 Оплатить по СБП", callback_data=f"sbp_{order_id}")
-            ]
+            [InlineKeyboardButton(text="💵 Наличными при получении", callback_data=f"cash_{order_id}")],
+            [InlineKeyboardButton(text="💳 Оплатить по СБП", callback_data=f"sbp_{order_id}")]
         ])
         
-        # Отправляем чек покупателю
         await message.answer(receipt_text, reply_markup=payment_kb, parse_mode="Markdown")
         
     except Exception as e:
@@ -91,18 +81,16 @@ async def process_cash_payment(callback: types.CallbackQuery):
         await callback.message.edit_text("❌ Сессия заказа истекла. Оформи заново в меню.")
         return
         
-    # Обновляем сообщение у клиента
     await callback.message.edit_text(
         callback.message.text + "\n\n✅ **Способ оплаты:** Наличными при получении.\n"
         "Наш кондитер уже связывается с вами для подтверждения заказа! ✨",
         parse_mode="Markdown"
     )
     
-    # Отправляем уведомление администратору/кондитеру в личку
     await send_admin_alert(order_id, data, "💵 НАЛИЧНЫМИ ПРИ ПОЛУЧЕНИИ")
     await callback.answer()
 
-# 3. ОБРАБОТКА ВЫБОРА: СБП (Через нативный Telegram Invoice)
+# 3. ОБРАБОТКА ВЫБОРА: СБП
 @dp.callback_query(F.data.startswith("sbp_"))
 async def process_sbp_payment(callback: types.CallbackQuery):
     order_id = callback.data.split("_")[1]
@@ -119,10 +107,8 @@ async def process_sbp_payment(callback: types.CallbackQuery):
     description = f"Премиальные трайфлы: {items_text}"
     prices = [LabeledPrice(label="Сумма заказа", amount=int(total_price * 100))]
     
-    # Сразу удаляем старый чек с кнопками, чтобы выставить счет
     await callback.message.delete()
     
-    # Выставляем счет (при подключении ЮKassa с СБП тут автоматически появится кнопка СБП)
     await bot.send_invoice(
         chat_id=callback.message.chat.id,
         title="Оплата заказа по СБП в SweetSpot",
@@ -139,7 +125,6 @@ async def process_sbp_payment(callback: types.CallbackQuery):
     )
     await callback.answer()
 
-# Обязательный шаг для Telegram инвойсов
 @dp.pre_checkout_query()
 async def pre_checkout_handler(pre_checkout_query: PreCheckoutQuery):
     await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
@@ -156,10 +141,8 @@ async def successful_payment_handler(message: types.Message):
 
     cart = data.get('cart', [])
     total_price = data.get('totalPrice', 0)
-    
     items_text = "\n".join([f"- {item['name']} x{item['quantity']}" for item in cart])
     
-    # Подтверждение клиенту
     await message.answer(
         f"🎉 **Оплата успешно получена по СБП!** Спасибо за заказ.\n\n"
         f"**Состав:**\n{items_text}\n\n"
@@ -167,14 +150,10 @@ async def successful_payment_handler(message: types.Message):
         f"Скоро кондитер свяжется с вами!"
     )
     
-    # Уведомление админу
     await send_admin_alert(order_id, data, "💳 ОПЛАЧЕНО ПО СБП")
-    
-    # Чистим кэш
     if order_id in ORDERS_DB:
         del ORDERS_DB[order_id]
 
-# Вспомогательная функция отправки карточки админу
 async def send_admin_alert(order_id, data, method_name):
     cart = data.get('cart', [])
     address = data.get('address', {})
@@ -203,7 +182,7 @@ async def send_admin_alert(order_id, data, method_name):
     await bot.send_message(chat_id=ADMIN_ID, text=admin_alert)
 
 async def main():
-    print("Бот SweetSpot успешно запущен с поддержкой Наличных и СБП!")
+    print("Бот SweetSpot запущен без ошибок отступов!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
