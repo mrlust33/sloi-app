@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet">
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -15,6 +15,11 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     
     <link rel="stylesheet" href="style.css?v=10.0">
+    <style>
+        body.modal-active { overflow: hidden !important; position: fixed; width: 100%; height: 100%; touch-action: none; }
+        .bottom-sheet.active { max-height: 85vh !important; overflow-y: auto !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important; }
+        .tg-account-info { color: #10b981; font-weight: 600; font-size: 15px; padding: 16px; background: #ffffff; border-radius: 12px; border: 1.5px solid #10b981; font-family: 'Inter', sans-serif; display: none; margin-bottom: 12px;}
+    </style>
 </head>
 <body>
 
@@ -70,6 +75,7 @@
         </div>
         
         <div class="input-group" id="name-input-group">
+            <div class="tg-account-info" id="tg-account-info"></div>
             <input type="text" id="username" placeholder="Ваше имя" required>
         </div>
         
@@ -79,11 +85,11 @@
         <div class="input-group"><input type="text" id="street" placeholder="Улица (например, Летчика Ларюшина)" required></div>
         <div class="row">
             <div class="input-group"><input type="text" id="house" placeholder="Дом" required></div>
-            <div class="input-group"><input type="number" id="entrance" placeholder="Подъезд" required></div>
+            <div class="input-group"><input type="text" id="entrance" placeholder="Подъезд"></div>
         </div>
         <div class="row">
-            <div class="input-group"><input type="number" id="floor" placeholder="Этаж" required></div>
-            <div class="input-group"><input type="number" id="flat" placeholder="Квартира" required></div>
+            <div class="input-group"><input type="text" id="floor" placeholder="Этаж"></div>
+            <div class="input-group"><input type="text" id="flat" placeholder="Квартира"></div>
         </div>
         <div class="input-group"><input type="text" id="comment" placeholder="Комментарий курьеру"></div>
         
@@ -92,7 +98,7 @@
             <span id="delivery-time-value" class="placeholder">Указать... 🕒</span>
         </div>
         
-        <button class="main-action-btn shimmer-btn" onclick="sendDataToBot()" disabled style="opacity: 0.5; pointer-events: none;">Подтвердить заказ</button>
+        <button class="main-action-btn shimmer-btn" id="submit-order-btn" onclick="sendDataToBot()" disabled style="opacity: 0.5; pointer-events: none;">Подтвердить заказ</button>
         <p class="marketing-trigger">✨ Десерты начнут готовиться сразу после подтверждения</p>
     </div>
 

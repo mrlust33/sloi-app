@@ -1,7 +1,8 @@
 const tg = window.Telegram?.WebApp;
-const WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=10.0"; 
+const WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=10.0";
 
 if(tg) {
+    tg.ready();
     tg.expand();
     if (tg.disableVerticalSwipes) {
         tg.disableVerticalSwipes();
@@ -43,27 +44,16 @@ let isCartBtnVisible = false;
 let saturdaysData = [];
 
 function initTelegramData() {
-    const tgUser = tg?.initDataUnsafe?.user || {};
+    const tgUser = tg?.initDataUnsafe?.user;
     const nameInput = document.getElementById('username');
-    const nameGroup = document.getElementById('name-input-group');
+    const accountInfo = document.getElementById('tg-account-info');
     
-    if (nameInput && nameGroup) {
+    if (tgUser && nameInput && accountInfo) {
         if (tgUser.username) {
             nameInput.style.display = 'none';
             nameInput.required = false;
-            nameInput.value = tgUser.first_name || tgUser.username;
-            
-            const accountText = document.createElement('div');
-            accountText.style.color = '#10b981';
-            accountText.style.fontWeight = '600';
-            accountText.style.fontSize = '15px';
-            accountText.style.padding = '16px';
-            accountText.style.background = '#ffffff';
-            accountText.style.borderRadius = '12px';
-            accountText.style.border = '1.5px solid #10b981';
-            accountText.style.fontFamily = "'Inter', sans-serif";
-            accountText.innerText = `💚 Аккаунт @${tgUser.username} привязан к заказу`;
-            nameGroup.appendChild(accountText);
+            accountInfo.innerText = `💚 Аккаунт @${tgUser.username} привязан к заказу`;
+            accountInfo.style.display = 'block';
         } else if (tgUser.first_name) {
             nameInput.value = tgUser.first_name;
         }
@@ -133,8 +123,8 @@ function addFromInfoSheet(event, id) {
     const y = (rect.top + rect.height / 2) / window.innerHeight;
 
     confetti({
-        particleCount: 16, spread: 45, startVelocity: 18, scalar: 0.9, ticks: 60,
-        origin: { x, y }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
+        particleCount: 40, spread: 60, startVelocity: 18, scalar: 0.9, ticks: 60,
+        origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
     });
 
     if (!cart[id]) {
@@ -171,8 +161,8 @@ function handleFirstAdd(event, id) {
     const y = (rect.top + rect.height / 2) / window.innerHeight;
 
     confetti({
-        particleCount: 16, spread: 45, startVelocity: 18, scalar: 0.9, ticks: 60,
-        origin: { x, y }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
+        particleCount: 40, spread: 60, startVelocity: 18, scalar: 0.9, ticks: 60,
+        origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
     });
 
     cart[id] = 1;
@@ -330,8 +320,8 @@ function openCartSheet() {
 
     if (totalCount > 0) {
         confetti({
-            particleCount: 16, spread: 45, startVelocity: 18, scalar: 0.9, ticks: 60,
-            origin: { x: 0.5, y: 0.5 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
+            particleCount: 40, spread: 60, startVelocity: 18, scalar: 0.9, ticks: 60,
+            origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
         });
     }
 
@@ -339,8 +329,8 @@ function openCartSheet() {
 }
 
 function closeCartWithHaptic() {
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    if (tg?.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('light');
     }
     const cartSheet = document.getElementById('cart-screen');
     cartSheet.classList.remove('active');
@@ -378,7 +368,7 @@ function checkFormValidity() {
     const houseInput = document.getElementById('house');
     const timeValue = document.getElementById('delivery-time-value').innerText;
     
-    const submitBtn = document.querySelector('#checkout-screen .main-action-btn');
+    const submitBtn = document.getElementById('submit-order-btn');
     if (!submitBtn) return;
 
     const phoneDigits = phoneInput.value.replace(/\D/g, '');
@@ -430,10 +420,10 @@ function getNextDeliverySaturday() {
 }
 
 function sendDataToBot() {
-    const submitBtn = document.querySelector('#checkout-screen .main-action-btn');
+    const submitBtn = document.getElementById('submit-order-btn');
     if (submitBtn && submitBtn.disabled) return;
 
-    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const tgUser = tg?.initDataUnsafe?.user;
     
     const address = {
         street: document.getElementById('street').value,
@@ -722,8 +712,6 @@ function openPicker() {
         document.activeElement.blur(); 
     }
 
-    document.body.classList.add('modal-active');
-    
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     
     document.getElementById('picker-overlay').classList.add('active');
@@ -737,8 +725,6 @@ function openPicker() {
 }
 
 function closePickerAndSave() {
-    document.body.classList.remove('modal-active');
-
     if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     
     let dateWheel = document.getElementById('wheel-date');
@@ -806,7 +792,3 @@ initBottomSheetSwipe('product-info-screen', 'drag-handle-info');
 initKeyboardHandling();
 initEnterNavigation();
 initFormValidation();
-
-document.querySelectorAll('.bottom-sheet').forEach(sheet => {
-    sheet.classList.add('sheet-content-scroll');
-});

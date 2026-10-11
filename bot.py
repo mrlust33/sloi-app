@@ -10,7 +10,6 @@ from aiogram.types import (
     WebAppInfo
 )
 
-# Конфигурация проекта SweetSpot (НЕ ИЗМЕНЯТЬ)
 BOT_TOKEN = "8765647186:AAHSxInOny0IzDz5gRf83AX3wlszTRFgoXs"
 ADMIN_ID = 5293518524
 SUPPORT_LINK = "https://t.me"
@@ -58,7 +57,7 @@ async def web_app_data_handler(message: types.Message):
         order_id = uuid.uuid4().hex[:8].upper()
         
         tg_user = message.from_user
-        username_str = f"@{tg_user.username}" if tg_user.username else f"[{tg_user.full_name}](tg://user?id={tg_user.id})"
+        username_str = f"@{tg_user.username}" if tg_user.username else f"<a href='tg://user?id={tg_user.id}'>{tg_user.full_name}</a>"
         
         data['username_str'] = username_str
         data['user_id'] = tg_user.id
@@ -215,10 +214,10 @@ async def send_admin_alert(order_id, data, tag):
         f"**Адрес:** {address_text}\n"
         f"**Комментарий:** {comment}"
     )
-    await bot.send_message(chat_id=ADMIN_ID, text=admin_alert, parse_mode="Markdown")
+    await bot.send_message(chat_id=ADMIN_ID, text=admin_alert, parse_mode="HTML" if "<a href=" in username_str else "Markdown")
 
 async def main():
-    print("Бот SweetSpot запущен. Скролл и валидация активны!")
+    print("Бот SweetSpot запущен. Версия v=10.0 активна!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
