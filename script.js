@@ -1,4 +1,6 @@
 const tg = window.Telegram?.WebApp;
+const WEB_APP_URL = "https://github.io";
+
 if(tg) {
     tg.expand();
     if (tg.disableVerticalSwipes) {
@@ -87,11 +89,9 @@ function renderProducts() {
     });
 }
 
-// 2. ЖЕСТКАЯ БЛОКИРОВКА ФОНА ПРИ ОТКРЫТИИ ЛЮБОЙ ШТОРКИ
 function openProductInfo(id) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-    
-    document.body.classList.add('modal-active'); // ЗАЩИТА ОТ СКРОЛЛА
+    document.body.classList.add('modal-active');
     
     const p = products.find(prod => prod.id === id);
     if(!p) return;
@@ -304,7 +304,7 @@ function clearCart(event) {
 }
 
 function openCartSheet() {
-    document.body.classList.add('modal-active'); // ЗАЩИТА ОТ СКРОЛЛА
+    document.body.classList.add('modal-active');
     document.getElementById('overlay').classList.add('active');
     document.getElementById('cart-screen').classList.add('active');
     gsap.set('#cart-screen', { y: 0 }); 
@@ -333,10 +333,13 @@ function closeCartWithHaptic() {
 }
 
 function goToCheckout() {
-    document.body.classList.add('modal-active'); // ЗАЩИТА ОТ СКРОЛЛА
+    document.body.classList.add('modal-active');
     document.getElementById('cart-screen').classList.remove('active');
     document.getElementById('checkout-screen').classList.add('active');
     gsap.set('#checkout-screen', { y: 0 });
+    
+    document.getElementById('delivery-time-value').innerText = "Указать... 🕒";
+    checkFormValidity();
     
     if(tg?.MainButton) {
         tg.MainButton.color = "#1A1A1A"; 
@@ -346,7 +349,7 @@ function goToCheckout() {
 }
 
 function closeAllSheets() {
-    document.body.classList.remove('modal-active'); // СНИМАЕМ БЛОКИРОВКУ
+    document.body.classList.remove('modal-active');
     document.getElementById('overlay').classList.remove('active');
     document.getElementById('cart-screen').classList.remove('active');
     document.getElementById('checkout-screen').classList.remove('active');
@@ -358,8 +361,69 @@ function closeAllSheets() {
     if(tg?.MainButton) tg.MainButton.hide();
 }
 
+// ================= ЖЕСТКАЯ ВАЛИДАЦИЯ ФОРМЫ =================
+function checkFormValidity() {
+    const phoneInput = document.getElementById('phone');
+    const streetInput = document.getElementById('street');
+    const houseInput = document.getElementById('house');
+    const timeValue = document.getElementById('delivery-time-value').innerText;
+    
+    const submitBtn = document.querySelector('#checkout-screen .main-action-btn');
+    if (!submitBtn) return;
+
+    const phoneDigits = phoneInput.value.replace(/\D/g, '');
+    const isPhoneValid = phoneDigits.length === 11;
+    const isAddressValid = streetInput.value.trim() !== '' && houseInput.value.trim() !== '';
+    const isTimeValid = !timeValue.includes('Указать...') && !timeValue.includes('Нет доступного времени');
+
+    if (isPhoneValid && isAddressValid && isTimeValid) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.pointerEvents = 'all';
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.pointerEvents = 'none';
+    }
+}
+
+function initFormValidation() {
+    const inputs = ['phone', 'street', 'house'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', checkFormValidity);
+            el.addEventListener('change', checkFormValidity);
+        }
+    });
+    checkFormValidity();
+}
+
+function getNextDeliverySaturday() {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const mskNow = new Date(utc + (3 * 3600000));
+    
+    const currentDay = mskNow.getDay();
+    let daysToSat = (6 - currentDay + 7) % 7;
+    
+    if (daysToSat === 0 && mskNow.getHours() >= 20) {
+        daysToSat = 7;
+    }
+    
+    const nextSat = new Date(mskNow);
+    nextSat.setDate(mskNow.getDate() + daysToSat);
+    
+    const day = String(nextSat.getDate()).padStart(2, '0');
+    const month = String(nextSat.getMonth() + 1).padStart(2, '0');
+    return `${day}.${month} (Суббота)`;
+}
+
 function sendDataToBot() {
-    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user || {};
+    const submitBtn = document.querySelector('#checkout-screen .main-action-btn');
+    if (submitBtn && submitBtn.disabled) return;
+
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     
     const address = {
         street: document.getElementById('street').value,
@@ -385,6 +449,8 @@ function sendDataToBot() {
         }
     }
 
+    const calculatedSaturday = getNextDeliverySaturday();
+
     const payload = { 
         cart: cartData, 
         totalPrice: totalPrice, 
@@ -392,8 +458,9 @@ function sendDataToBot() {
         phone: phone, 
         name: name,
         delivery_time: deliveryTime,
-        tg_username: tgUser.username || "Скрыт",
-        tg_id: tgUser.id || "Неизвестен"
+        delivery_date: calculatedSaturday,
+        tg_username: tgUser?.username || tgUser?.first_name || "Не указан",
+        tg_id: tgUser?.id || null
     };
     
     if(tg) {
@@ -466,11 +533,26 @@ function initKeyboardHandling() {
     document.querySelectorAll('.bottom-sheet').forEach(sheet => {
         sheet.addEventListener('click', (e) => {
             if (e.target === sheet || e.target.classList.contains('checkout-header') || e.target.classList.contains('cart-header')) {
-                if (document.activeElement && document.activeElement.tagName === 'INPUT') {
-                    document.activeElement.blur(); 
-                }
+                document.activeElement?.blur(); 
             }
         });
+    });
+
+    const inputIds = ['username', 'phone', 'street', 'house', 'entrance', 'floor', 'flat', 'comment'];
+    inputIds.forEach((id, index) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (index < inputIds.length - 1) {
+                        document.getElementById(inputIds[index + 1])?.focus();
+                    } else {
+                        el.blur();
+                    }
+                }
+            });
+        }
     });
 
     document.querySelectorAll('#checkout-screen input, #checkout-screen textarea').forEach(input => {
@@ -480,7 +562,7 @@ function initKeyboardHandling() {
             sheet.style.paddingBottom = '350px';
             setTimeout(() => {
                 e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 250);
+            }, 200);
         });
         
         input.addEventListener('blur', () => {
@@ -490,70 +572,51 @@ function initKeyboardHandling() {
     });
 }
 
-function initEnterNavigation() {
-    const inputIds = ['username', 'phone', 'street', 'house', 'entrance', 'floor', 'flat', 'comment'];
-    
-    inputIds.forEach((id, index) => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (index < inputIds.length - 1) {
-                        document.getElementById(inputIds[index + 1]).focus();
-                    } else {
-                        el.blur();
-                    }
-                }
-            });
-        }
-    });
-}
-
 function initPhoneMask() {
     const phoneInput = document.getElementById('phone');
     if (!phoneInput) return;
 
     phoneInput.addEventListener('input', function (e) {
-        let input = e.target.value.replace(/\D/g, ''); 
-        if (!input) { e.target.value = ''; return; }
+        let digits = e.target.value.replace(/\D/g, ''); 
+        if (!digits) { e.target.value = ''; return; }
         
-        if (['7', '8', '9'].includes(input[0])) {
-            if (input[0] === '9') input = '7' + input;
+        if (['7', '8', '9'].includes(digits[0])) {
+            if (digits[0] === '9') digits = '7' + digits; 
             let formatted = '+7 ';
-            if (input.length > 1) formatted += '(' + input.substring(1, 4);
-            if (input.length >= 5) formatted += ') ' + input.substring(4, 7);
-            if (input.length >= 8) formatted += '-' + input.substring(7, 9);
-            if (input.length >= 10) formatted += '-' + input.substring(9, 11);
+            if (digits.length > 1) formatted += '(' + digits.substring(1, 4);
+            if (digits.length >= 5) formatted += ') ' + digits.substring(4, 7);
+            if (digits.length >= 8) formatted += '-' + digits.substring(7, 9);
+            if (digits.length >= 10) formatted += '-' + digits.substring(9, 11);
+            
             e.target.value = formatted;
+
+            if (digits.length >= 11) {
+                e.target.blur();
+            }
         } else {
-            e.target.value = '+' + input.substring(0, 15);
+            e.target.value = '+' + digits.substring(0, 15);
         }
-
-        if (e.target.value.length === 18) {
-            e.target.blur();
-        }
-    });
-
-    phoneInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Backspace' && e.target.value.length <= 4) e.target.value = '';
-    });
-    phoneInput.addEventListener('focus', function(e) {
-         if (!e.target.value) e.target.value = '+7 ';
-    });
-    phoneInput.addEventListener('blur', function(e) {
-         if (e.target.value === '+7 ' || e.target.value === '+7') e.target.value = '';
     });
 }
 
 // ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН =================
 function initPickerData() {
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-    let d = new Date();
-    let currentDay = d.getDay();
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const mskNow = new Date(utc + (3 * 3600000));
+    
+    let currentDay = mskNow.getDay();
+    let currentHour = mskNow.getHours();
     let daysToSat = (6 - currentDay + 7) % 7;
-    let firstSat = new Date(d);
-    firstSat.setDate(d.getDate() + daysToSat);
+    
+    if (daysToSat === 0 && currentHour >= 20) {
+        daysToSat = 7;
+    }
+
+    saturdaysData = []; 
+    let firstSat = new Date(mskNow);
+    firstSat.setDate(mskNow.getDate() + daysToSat);
 
     for (let i = 0; i < 4; i++) {
         let sat = new Date(firstSat);
@@ -579,7 +642,11 @@ function initPickerData() {
 
 function updateHoursWheel(dateIndex) {
     let isToday = saturdaysData[dateIndex]?.isToday;
-    let currentHour = new Date().getHours();
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const mskNow = new Date(utc + (3 * 3600000));
+    let currentHour = mskNow.getHours();
+    
     let startHour = (isToday && currentHour >= 10) ? Math.max(10, currentHour + 1) : 10;
     
     let hours = [];
@@ -702,6 +769,8 @@ function closePickerAndSave() {
         valEl.classList.remove('placeholder');
     }
     
+    checkFormValidity();
+    
     gsap.to('#picker-overlay', { opacity: 0, duration: 0.3, onComplete: () => {
         document.getElementById('picker-overlay').classList.remove('active');
     }});
@@ -743,8 +812,8 @@ initBottomSheetSwipe('checkout-screen', 'drag-handle-checkout');
 initBottomSheetSwipe('product-info-screen', 'drag-handle-info');
 initKeyboardHandling();
 initEnterNavigation();
+initFormValidation();
 
-// 3. АППАРАТНАЯ ЗАЩИТА ТАЧ-СОБЫТИЙ ОВЕРЛЕЯ
 document.querySelectorAll('.bottom-sheet').forEach(sheet => {
     sheet.classList.add('sheet-content-scroll');
 });
