@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 BOT_TOKEN = "8765647186:AAGez9_BPRed47X2tp-QBc9MVERmxrOUkqk"
 ADMIN_ID = 5293518524
 SUPPORT_LINK = "tg://user?id=5293518524"
-WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=12.0"
+WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=15.0"
 
 SBP_PHONE = "+7 (977) 627-44-42"
 SBP_BANK = "Т-Банк / Сбербанк"
@@ -46,7 +46,6 @@ async def command_start_handler(message: types.Message):
         "Премиальные трайфлы ручной работы. Доставляем свежие партии по субботам ✨"
     )
     await message.answer(text, reply_markup=reply_kb, parse_mode="HTML")
-    await message.answer("Для связи с нами используйте кнопку ниже:", reply_markup=inline_kb, parse_mode="HTML")
 
 
 @dp.message(F.web_app_data)
@@ -54,32 +53,35 @@ async def web_app_data_handler(message: types.Message):
     try:
         data = json.loads(message.web_app_data.data)
         order_id = uuid.uuid4().hex[:8].upper()
+        tg_user = message.from_user
         
-        # СВЕРХБЕЗОПАСНЫЙ ПАРСИНГ С РЕЗЕРВНЫМИ КЛЮЧАМИ
-        total_price = data.get('totalPrice') or data.get('total_amount') or data.get('total') or 0
-        raw_items = data.get('items') or data.get('cart') or []
-        delivery_date_raw = data.get('delivery_date') or data.get('delivery_time') or 'Не указана'
-        raw_address = data.get('address') or "Не указан"
-        phone_raw = data.get('phone') or "Не указан"
+        # БЕЗОПАСНОЕ ИЗВЛЕЧЕНИЕ ДАННЫХ
+        cart_items = data.get('cart', [])
+        total_price = data.get('totalPrice', 0)
+        phone_raw = data.get('phone', 'Не указан')
         customer_name_raw = data.get('name', 'Не указан')
+        delivery_date_raw = data.get('delivery_date', 'Не указана')
+        delivery_time_raw = data.get('delivery_time', 'Не указано')
         tg_username_raw = data.get('tg_username', 'Не указан')
         tg_id = data.get('tg_id')
+        addr = data.get('address', {})
 
         # ТОТАЛЬНОЕ ЭКРАНИРОВАНИЕ СПЕЦСИМВОЛОВ ДЛЯ HTML
         safe_phone = html.escape(str(phone_raw))
         safe_name = html.escape(str(customer_name_raw))
         safe_date = html.escape(str(delivery_date_raw))
+        safe_time = html.escape(str(delivery_time_raw))
         safe_username = html.escape(str(tg_username_raw).replace('@', ''))
         
         # Форматирование адреса
-        if isinstance(raw_address, dict):
-            safe_street = html.escape(str(raw_address.get('street', '')))
-            safe_house = html.escape(str(raw_address.get('house', '')))
-            safe_entrance = html.escape(str(raw_address.get('entrance', '')))
-            safe_floor = html.escape(str(raw_address.get('floor', '')))
-            apartment_raw = raw_address.get('apartment') or raw_address.get('flat')
+        if isinstance(addr, dict):
+            safe_street = html.escape(str(addr.get('street', '')))
+            safe_house = html.escape(str(addr.get('house', '')))
+            safe_entrance = html.escape(str(addr.get('entrance', '')))
+            safe_floor = html.escape(str(addr.get('floor', '')))
+            apartment_raw = addr.get('apartment') or addr.get('flat')
             safe_flat = html.escape(str(apartment_raw)) if apartment_raw else ""
-            safe_comment = html.escape(str(raw_address.get('comment', '')))
+            safe_comment = html.escape(str(addr.get('comment', '')))
             
             addr_parts = []
             if safe_street: addr_parts.append(f"ул. {safe_street}")
@@ -92,18 +94,18 @@ async def web_app_data_handler(message: types.Message):
             if safe_comment: 
                 address_text += f"\n<b>Коммент:</b> <i>{safe_comment}</i>"
         else:
-            address_text = html.escape(str(raw_address))
+            address_text = html.escape(str(addr))
 
         # Форматирование списка товаров
         items_lines = []
-        if isinstance(raw_items, list):
-            for item in raw_items:
+        if isinstance(cart_items, list):
+            for item in cart_items:
                 safe_item_name = html.escape(str(item.get('name', 'Десерт')))
                 qty = item.get('quantity', 1)
                 items_lines.append(f"• {safe_item_name} — {qty} шт.")
         items_text = "\n".join(items_lines) if items_lines else "Пусто"
 
-        # ЛОГИКА ДЛЯ КНОПКИ СВЯЗИ И ИМЕНИ КЛИЕНТА (ДЛЯ АДМИНА)
+        # ЛОГИКА ДЛЯ КНОПКИ СВЯЗИ И ИМЕНИ КЛИЕНТА
         if safe_username and safe_username != "Не указан":
             client_display = f"{safe_name} (@{safe_username})"
             contact_btn = InlineKeyboardButton(text="💬 Написать клиенту", url=f"https://t.me/{safe_username}")
@@ -114,13 +116,13 @@ async def web_app_data_handler(message: types.Message):
             client_display = f"{safe_name} (Юзернейм скрыт)"
             contact_btn = InlineKeyboardButton(text="📞 Связь по телефону", callback_data=f"none_{order_id}")
 
-        # БАЗОВЫЙ ТЕКСТ КАРТОЧКИ (Без статуса, он добавится при выборе оплаты)
+        # БАЗОВЫЙ ТЕКСТ КАРТОЧКИ АДМИНА (ДАТА + ВРЕМЯ)
         base_admin_text = (
             f"🔔 <b>СОЗДАН НОВЫЙ ЗАКАЗ #{order_id}</b>\n"
             f"👤 Клиент: {client_display}\n"
             f"📱 Телефон: <b>{safe_phone}</b>\n"
             f"📍 Адрес: {address_text}\n"
-            f"📅 Дата: {safe_date}\n"
+            f"📅 Дата и время: {safe_date} | {safe_time}\n"
             f"🧁 Состав:\n{items_text}\n"
             f"💰 Сумма: {total_price} ₽"
         )
@@ -143,7 +145,7 @@ async def web_app_data_handler(message: types.Message):
         
         client_kb = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="⚡️ Оплатить по СБП", callback_data=f"pay_sbp_{order_id}")],
-            [InlineKeyboardButton(text="💵 Наличными при получении", callback_data=f"pay_cash_{order_id}")]
+            [InlineKeyboardButton(text="💵 Наличными курьеру", callback_data=f"pay_cash_{order_id}")]
         ])
         
         await message.answer(client_text, reply_markup=client_kb, parse_mode="HTML")
@@ -156,6 +158,7 @@ async def web_app_data_handler(message: types.Message):
             f"<b>Сырой JSON от фронтенда:</b>\n<code>{html.escape(str(raw_data))}</code>"
         )
         
+        # Защита от превышения лимита длины сообщения Telegram (4096 символов)
         if len(error_text) > 4000:
             error_text = error_text[:4000] + "\n\n...[ОБРЕЗАНО]"
             
@@ -167,7 +170,7 @@ async def web_app_data_handler(message: types.Message):
 
 @dp.callback_query(F.data.startswith("none_"))
 async def process_none_contact(callback: types.CallbackQuery):
-    await callback.answer("Юзернейм скрыт. Скопируйте номер телефона из текста заказа!", show_alert=True)
+    await callback.answer("Юзернейм скрыт. Номер телефона указан в тексте заказа!", show_alert=True)
 
 
 @dp.callback_query(F.data.startswith("pay_sbp_"))
@@ -222,12 +225,14 @@ async def process_sbp_done(callback: types.CallbackQuery):
     ])
     
     try:
-        await bot.send_message(
+        admin_msg = await bot.send_message(
             chat_id=ADMIN_ID, 
             text=full_admin_text, 
             reply_markup=admin_kb, 
             parse_mode="HTML"
         )
+        # Сохраняем msg_id, чтобы потом можно было убрать кнопки
+        orders_db[order_id]["admin_msg_id"] = admin_msg.message_id
     except Exception as e:
         logging.error(f"Ошибка отправки карточки админу: {e}", exc_info=True)
         
@@ -258,12 +263,13 @@ async def process_cash_payment(callback: types.CallbackQuery):
     ])
     
     try:
-        await bot.send_message(
+        admin_msg = await bot.send_message(
             chat_id=ADMIN_ID, 
             text=full_admin_text, 
             reply_markup=admin_kb, 
             parse_mode="HTML"
         )
+        orders_db[order_id]["admin_msg_id"] = admin_msg.message_id
     except Exception as e:
         logging.error(f"Ошибка отправки карточки админу: {e}", exc_info=True)
         
@@ -290,7 +296,7 @@ async def admin_confirm(callback: types.CallbackQuery):
         try:
             await bot.send_message(
                 chat_id=order_data.get("user_id"), 
-                text=f"🎉 Оплата подтверждена! Ваш заказ #{order_id} принят в работу, десерты приедут в субботу ✨",
+                text=f"🎉 Оплата подтверждена! Ваш заказ #{order_id} принят в работу, десерты приедут в выбранное время ✨",
                 parse_mode="HTML"
             )
         except Exception as e:
@@ -333,7 +339,7 @@ async def admin_reject(callback: types.CallbackQuery):
 
 
 async def main():
-    logging.info("Бот SweetSpot запущен. Отложенная отправка админу и безопасный tel-коллбэк активны.")
+    logging.info("Бот SweetSpot запущен. Дата и время теперь отображаются, отправка админу отложена до оплаты.")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
