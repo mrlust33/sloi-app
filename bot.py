@@ -14,7 +14,7 @@ from aiogram.types import (
 BOT_TOKEN = "8765647186:AAHSxInOny0IzDz5gRf83AX3wlszTRFgoXs"
 ADMIN_ID = 5293518524
 SUPPORT_LINK = "https://t.me"
-WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=6.0"
+WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=8.0"
 SBP_PHONE = "+7 (977) 627-44-42"
 SBP_BANK = "Т-Банк / Сбербанк"
 SBP_RECEIVER = "Андрей А."
@@ -22,7 +22,6 @@ SBP_RECEIVER = "Андрей А."
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# Временная in-memory БД
 ORDERS_DB = {}
 
 def get_next_delivery_saturday():
@@ -137,7 +136,7 @@ async def process_sbp_selection(callback: types.CallbackQuery):
         f"👤 **Получатель:** {SBP_RECEIVER}\n\n"
         f"**Инструкция:**\n"
         f"1. Скопируйте номер телефона и переведите {total_price} ₽ в приложении своего банка по СБП.\n"
-        f"2. После перевода нажмите кнопку «✅ Я оплатил(а)» ниже. Кондитер сверит поступление и подтвердит заказ! ✨"
+        f"2. После перевода нажмите кнопку «✅ Я оплатил(а)» ниже. Курьер / Служба заботы свяжется с вами для подтверждения доставки! ✨"
     )
     
     kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -157,7 +156,7 @@ async def sbp_done_handler(callback: types.CallbackQuery):
         return await callback.answer()
 
     await callback.message.edit_text(
-        "⏳ **Платеж на проверке!** Кондитер уже сверяет поступление средств по выписке банка. "
+        "⏳ **Платеж на проверке!** Мы уже сверяем поступление средств по выписке банка. "
         "Курьер / Служба заботы свяжется с вами для подтверждения доставки! ✨",
         parse_mode="Markdown"
     )
@@ -219,7 +218,7 @@ async def send_admin_alert(order_id, data, tag):
     await bot.send_message(chat_id=ADMIN_ID, text=admin_alert, parse_mode="Markdown")
 
 async def main():
-    print("Бот SweetSpot запущен. Жесткая валидация и профили активны.")
+    print("Бот SweetSpot запущен. Все фиксы активны!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

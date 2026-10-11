@@ -1,5 +1,5 @@
 const tg = window.Telegram?.WebApp;
-const WEB_APP_URL = "https://github.io";
+const WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=6.0";
 
 if(tg) {
     tg.expand();
@@ -47,14 +47,26 @@ function initTelegramData() {
     const nameInput = document.getElementById('username');
     const nameGroup = document.getElementById('name-input-group');
     
-    if (nameInput) {
-        if (tgUser.first_name) nameInput.value = tgUser.first_name;
-        const accountText = document.createElement('p');
-        accountText.className = 'tg-account-info';
-        accountText.innerText = tgUser.username ? 
-            `👤 Аккаунт для связи: @${tgUser.username}` : 
-            `👤 Аккаунт Telegram успешно привязан к заказу`;
-        nameGroup.appendChild(accountText);
+    if (nameInput && nameGroup) {
+        if (tgUser.username) {
+            nameInput.style.display = 'none';
+            nameInput.required = false;
+            nameInput.value = tgUser.first_name || tgUser.username;
+            
+            const accountText = document.createElement('div');
+            accountText.style.color = '#10b981';
+            accountText.style.fontWeight = '600';
+            accountText.style.fontSize = '15px';
+            accountText.style.padding = '16px';
+            accountText.style.background = '#ffffff';
+            accountText.style.borderRadius = '12px';
+            accountText.style.border = '1.5px solid #10b981';
+            accountText.style.fontFamily = "'Inter', sans-serif";
+            accountText.innerText = `💚 Аккаунт @${tgUser.username} привязан к заказу`;
+            nameGroup.appendChild(accountText);
+        } else if (tgUser.first_name) {
+            nameInput.value = tgUser.first_name;
+        }
     }
 }
 
@@ -361,7 +373,6 @@ function closeAllSheets() {
     if(tg?.MainButton) tg.MainButton.hide();
 }
 
-// ================= ЖЕСТКАЯ ВАЛИДАЦИЯ ФОРМЫ =================
 function checkFormValidity() {
     const phoneInput = document.getElementById('phone');
     const streetInput = document.getElementById('street');
@@ -545,9 +556,16 @@ function initKeyboardHandling() {
             el.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (index < inputIds.length - 1) {
-                        document.getElementById(inputIds[index + 1])?.focus();
-                    } else {
+                    let nextIndex = index + 1;
+                    while(nextIndex < inputIds.length) {
+                        const nextEl = document.getElementById(inputIds[nextIndex]);
+                        if(nextEl && nextEl.style.display !== 'none') {
+                            nextEl.focus();
+                            break;
+                        }
+                        nextIndex++;
+                    }
+                    if (nextIndex >= inputIds.length) {
                         el.blur();
                     }
                 }
@@ -559,15 +577,15 @@ function initKeyboardHandling() {
         input.addEventListener('focus', (e) => {
             if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
             const sheet = document.getElementById('checkout-screen');
-            sheet.style.paddingBottom = '350px';
+            sheet.style.paddingBottom = '400px';
             setTimeout(() => {
                 e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 200);
+            }, 300);
         });
         
         input.addEventListener('blur', () => {
             const sheet = document.getElementById('checkout-screen');
-            sheet.style.paddingBottom = '20px'; 
+            sheet.style.paddingBottom = '24px'; 
         });
     });
 }
@@ -599,7 +617,6 @@ function initPhoneMask() {
     });
 }
 
-// ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН =================
 function initPickerData() {
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const now = new Date();
@@ -801,7 +818,6 @@ function initAnimations() {
     }).to("#sweet-subtitle", { duration: 0.8, opacity: 1, ease: "power2.out" }, "-=0.3");
 }
 
-// Инициализация
 initTelegramData();
 initPickerData();
 renderProducts();
