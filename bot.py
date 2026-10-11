@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 BOT_TOKEN = "8765647186:AAGez9_BPRed47X2tp-QBc9MVERmxrOUkqk"
 ADMIN_ID = 5293518524
 SUPPORT_LINK = "tg://user?id=5293518524"
-WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=13.0"
+WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=14.0"
 
 SBP_PHONE = "+7 (977) 627-44-42"
 SBP_BANK = "Т-Банк / Сбербанк"
@@ -53,21 +53,22 @@ async def web_app_data_handler(message: types.Message):
     try:
         data = json.loads(message.web_app_data.data)
         order_id = uuid.uuid4().hex[:8].upper()
+        tg_user = message.from_user
         
-        # Строгое извлечение данных
+        # БЕЗОПАСНОЕ ИЗВЛЕЧЕНИЕ ДАННЫХ
         cart_items = data.get('cart', [])
         total_price = data.get('totalPrice', 0)
         phone_raw = data.get('phone', 'Не указан')
         customer_name_raw = data.get('name', 'Не указан')
-        delivery_date_raw = data.get('delivery_date', 'Не указана')
+        delivery_time_raw = data.get('delivery_time', 'Не указано')
         tg_username_raw = data.get('tg_username', 'Не указан')
         tg_id = data.get('tg_id')
         addr = data.get('address', {})
 
-        # 1. ТОТАЛЬНОЕ ЭКРАНИРОВАНИЕ ДАННЫХ ДЛЯ HTML
+        # ТОТАЛЬНОЕ ЭКРАНИРОВАНИЕ СПЕЦСИМВОЛОВ ДЛЯ HTML
         safe_phone = html.escape(str(phone_raw))
         safe_name = html.escape(str(customer_name_raw))
-        safe_date = html.escape(str(delivery_date_raw))
+        safe_time = html.escape(str(delivery_time_raw))
         safe_username = html.escape(str(tg_username_raw).replace('@', ''))
         
         safe_street = html.escape(str(addr.get('street', '')))
@@ -77,7 +78,7 @@ async def web_app_data_handler(message: types.Message):
         safe_flat = html.escape(str(addr.get('flat', '')))
         safe_comment = html.escape(str(addr.get('comment', '')))
 
-        # 2. ФОРМАТИРОВАНИЕ АДРЕСА
+        # ФОРМАТИРОВАНИЕ АДРЕСА
         addr_parts = []
         if safe_street: addr_parts.append(f"ул. {safe_street}")
         if safe_house: addr_parts.append(f"д. {safe_house}")
@@ -89,7 +90,7 @@ async def web_app_data_handler(message: types.Message):
         if safe_comment: 
             address_text += f"\n<b>Коммент:</b> <i>{safe_comment}</i>"
 
-        # 3. ФОРМАТИРОВАНИЕ КОРЗИНЫ
+        # ФОРМАТИРОВАНИЕ СОСТАВА КОРЗИНЫ
         items_lines = []
         if isinstance(cart_items, list):
             for item in cart_items:
@@ -98,29 +99,37 @@ async def web_app_data_handler(message: types.Message):
                 items_lines.append(f"• {safe_item_name} — {qty} шт.")
         items_text = "\n".join(items_lines) if items_lines else "Пусто"
 
-        # 4. ЛОГИКА ОТОБРАЖЕНИЯ КЛИЕНТА И КНОПКИ СВЯЗИ
-        if tg_username_raw == "Не указан" or not tg_username_raw:
+        # ЛОГИКА ДЛЯ КНОПКИ СВЯЗИ АДМИНА
+        if not safe_username or safe_username == "Не указан":
             client_display = f"{safe_name} (Юзернейм скрыт)"
             if tg_id:
                 contact_btn = InlineKeyboardButton(text="💬 Написать клиенту", url=f"tg://user?id={tg_id}")
             else:
-                clean_phone = str(phone_raw).replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
-                contact_btn = InlineKeyboardButton(text="📞 Позвонить", url=f"tel:{clean_phone}")
+                # Никаких tel:, используем callback-уведомление
+                contact_btn = InlineKeyboardButton(text="📞 Связь по телефону", callback_data=f"none_{order_id}")
         else:
             client_display = f"{safe_name} (@{safe_username})"
             contact_btn = InlineKeyboardButton(text="💬 Написать клиенту", url=f"https://t.me/{safe_username}")
 
-        # ФОРМИРОВАНИЕ ТЕКСТА ДЛЯ АДМИНА
+        # ТЕКСТ УВЕДОМЛЕНИЯ АДМИНУ
         admin_text = (
             f"🔔 <b>СОЗДАН НОВЫЙ ЗАКАЗ #{order_id}</b>\n"
             f"👤 Клиент: {client_display}\n"
-            f"📱 Телефон: {safe_phone}\n"
+            f"📱 Телефон: <b>{safe_phone}</b>\n"
             f"📍 Адрес: {address_text}\n"
-            f"📅 Дата: {safe_date}\n"
+            f"📅 Время: {safe_time}\n"
             f"🧁 Состав:\n{items_text}\n"
             f"💰 Сумма: {total_price} ₽\n"
             f"⏳ Статус: Ожидает выбора способа оплаты клиентом"
         )
+
+        orders_db[order_id] = {
+            "user_id": tg_user.id,
+            "total_price": total_price,
+            "admin_text": admin_text,
+            "contact_btn": contact_btn,
+            "admin_msg_id": None
+        }
 
         admin_kb = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="✅ Подтвердить", callback_data=f"adm_confirm_{order_id}")],
@@ -128,16 +137,7 @@ async def web_app_data_handler(message: types.Message):
             [contact_btn]
         ])
 
-        # Сохранение заказа и статуса в памяти
-        orders_db[order_id] = {
-            "user_id": message.from_user.id,
-            "total_price": total_price,
-            "admin_text": admin_text,
-            "contact_btn": contact_btn,
-            "admin_msg_id": None
-        }
-
-        # МГНОВЕННАЯ отправка уведомления админу
+        # МГНОВЕННАЯ ОТПРАВКА КАРТОЧКИ АДМИНУ
         admin_msg = await bot.send_message(
             chat_id=ADMIN_ID, 
             text=admin_text, 
@@ -146,7 +146,7 @@ async def web_app_data_handler(message: types.Message):
         )
         orders_db[order_id]["admin_msg_id"] = admin_msg.message_id
 
-        # Отправка карточки заказа клиенту
+        # ЧЕК ДЛЯ КЛИЕНТА
         client_text = (
             f"🧁 <b>Заказ #{order_id}</b>\n\n"
             f"<b>Состав:</b>\n{items_text}\n\n"
@@ -169,7 +169,7 @@ async def web_app_data_handler(message: types.Message):
             f"<b>Сырой JSON от фронтенда:</b>\n<code>{html.escape(str(raw_data))}</code>"
         )
         
-        # Обрезаем текст до лимитов Telegram
+        # Защита от превышения лимита длины сообщения Telegram (4096 символов)
         if len(error_text) > 4000:
             error_text = error_text[:4000] + "\n\n...[ОБРЕЗАНО]"
             
@@ -179,13 +179,18 @@ async def web_app_data_handler(message: types.Message):
         return
 
 
+@dp.callback_query(F.data.startswith("none_"))
+async def process_none_contact(callback: types.CallbackQuery):
+    await callback.answer("Юзернейм скрыт. Скопируйте номер телефона из текста заказа!", show_alert=True)
+
+
 @dp.callback_query(F.data.startswith("pay_sbp_"))
 async def process_sbp_payment(callback: types.CallbackQuery):
     order_id = callback.data.replace("pay_sbp_", "")
     order_data = orders_db.get(order_id)
     
     if not order_data:
-        return await callback.answer("Сессия заказа не найдена.", show_alert=True)
+        return await callback.answer("Сессия заказа не найдена или истекла.", show_alert=True)
     
     total_price = order_data.get("total_price", 0)
     text = (
@@ -224,7 +229,7 @@ async def process_sbp_done(callback: types.CallbackQuery):
         new_status = "⚠️ Клиент заявил об оплате по СБП! Проверьте выписку банка"
         new_text = order_data["admin_text"].replace(
             "⏳ Статус: Ожидает выбора способа оплаты клиентом", 
-            f"⏳ Статус: {new_status}"
+            f"⏳ Статус: <b>{new_status}</b>"
         )
         orders_db[order_id]["admin_text"] = new_text
         
@@ -262,10 +267,10 @@ async def process_cash_payment(callback: types.CallbackQuery):
     )
     
     if order_data.get("admin_msg_id"):
-        new_status = "💵 Оплата наличными при получении"
+        new_status = "💵 Способ оплаты изменен клиентом на: Наличными при получении"
         new_text = order_data["admin_text"].replace(
             "⏳ Статус: Ожидает выбора способа оплаты клиентом", 
-            f"⏳ Статус: {new_status}"
+            f"⏳ Статус: <b>{new_status}</b>"
         )
         orders_db[order_id]["admin_text"] = new_text
         
@@ -340,7 +345,7 @@ async def admin_reject(callback: types.CallbackQuery):
 
 
 async def main():
-    logging.info("Бот SweetSpot запущен. Сверхбезопасный HTML-парсинг и полная отладка активны.")
+    logging.info("Бот SweetSpot запущен. Скрытые юзернеймы корректно обходят tel-баг, защита HTML включена.")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
