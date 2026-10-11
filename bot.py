@@ -13,7 +13,7 @@ from aiogram.types import (
 BOT_TOKEN = "8765647186:AAGez9_BPRed47X2tp-QBc9MVERmxrOUkqk"
 ADMIN_ID = 5293518524
 SUPPORT_LINK = "tg://user?id=5293518524"
-WEB_APP_URL = "https://github.io"
+WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=11.0"
 
 SBP_PHONE = "+7 (977) 627-44-42"
 SBP_BANK = "Т-Банк / Сбербанк"
