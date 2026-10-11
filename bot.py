@@ -1,6 +1,7 @@
 import asyncio
 import json
 import uuid
+import logging
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import CommandStart
 from aiogram.types import (
@@ -9,11 +10,14 @@ from aiogram.types import (
     WebAppInfo
 )
 
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+
 # ЖЕСТКИЕ КОНСТАНТЫ ПРОЕКТА
 BOT_TOKEN = "8765647186:AAGez9_BPRed47X2tp-QBc9MVERmxrOUkqk"
 ADMIN_ID = 5293518524
 SUPPORT_LINK = "tg://user?id=5293518524"
-WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=11.0"
+WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=12.0"
 
 SBP_PHONE = "+7 (977) 627-44-42"
 SBP_BANK = "Т-Банк / Сбербанк"
@@ -42,7 +46,6 @@ async def command_start_handler(message: types.Message):
     await message.answer(text, reply_markup=reply_kb)
     await message.answer("Для связи с нами используйте кнопку ниже:", reply_markup=inline_kb)
 
-
 @dp.message(F.web_app_data)
 async def web_app_data_handler(message: types.Message):
     try:
@@ -50,19 +53,38 @@ async def web_app_data_handler(message: types.Message):
         order_id = uuid.uuid4().hex[:8].upper()
         tg_user = message.from_user
         
-        cart = data.get('cart', [])
-        total_price = data.get('totalPrice', 0)
-        delivery_date = data.get('delivery_date', data.get('delivery_time', 'Не указано'))
-        address_info = data.get('address', {})
-        phone = data.get('phone', 'Не указан')
+        # СВЕРХБЕЗОПАСНЫЙ ПАРСИНГ С РЕЗЕРВНЫМИ КЛЮЧАМИ
+        total_price = data.get('totalPrice') or data.get('total_amount') or data.get('total') or 0
+        raw_items = data.get('items') or data.get('cart') or []
+        delivery_date = data.get('delivery_date') or data.get('delivery_time') or 'Не указано'
+        raw_address = data.get('address') or "Не указан"
+        phone = data.get('phone') or "Не указан"
 
-        items_text = "\n".join([f"- {item['name']} x{item['quantity']}" for item in cart])
-        address_text = f"ул. {address_info.get('street', '')}, д. {address_info.get('house', '')}"
-        if address_info.get('entrance'): address_text += f", под. {address_info.get('entrance')}"
-        if address_info.get('floor'): address_text += f", эт. {address_info.get('floor')}"
-        if address_info.get('flat'): address_text += f", кв. {address_info.get('flat')}"
+        # Форматирование списка товаров
+        if isinstance(raw_items, str):
+            items_text = raw_items
+        else:
+            items_text = "\n".join([f"• {item.get('name', 'Десерт')} ({item.get('quantity', 1)} шт.)" for item in raw_items])
 
-        # Логика для контактных данных и выделения жирным шрифтом
+        # Форматирование адреса
+        if isinstance(raw_address, dict):
+            street = raw_address.get('street', '')
+            house = raw_address.get('house', '')
+            apartment = raw_address.get('apartment') or raw_address.get('flat')
+            
+            addr_parts = [f"ул. {street}", f"д. {house}"]
+            if raw_address.get('entrance'): 
+                addr_parts.append(f"под. {raw_address.get('entrance')}")
+            if raw_address.get('floor'): 
+                addr_parts.append(f"эт. {raw_address.get('floor')}")
+            if apartment: 
+                addr_parts.append(f"кв. {apartment}")
+                
+            address_text = ", ".join(addr_parts)
+        else:
+            address_text = str(raw_address)
+
+        # Контакты клиента и URL профиля
         if tg_user.username:
             client_text = f"{tg_user.full_name} (@{tg_user.username})"
             phone_text = phone
@@ -83,11 +105,8 @@ async def web_app_data_handler(message: types.Message):
             f"⏳ Статус: Ожидает выбора способа оплаты клиентом"
         )
 
-        # Сохранение заказа и статуса в памяти
         orders_db[order_id] = {
             "user_id": tg_user.id,
-            "username": tg_user.username,
-            "full_name": tg_user.full_name,
             "total_price": total_price,
             "admin_text": admin_text,
             "contact_url": contact_url,
@@ -100,15 +119,20 @@ async def web_app_data_handler(message: types.Message):
             [InlineKeyboardButton(text="💬 Написать клиенту", url=contact_url)]
         ])
 
-        # МГНОВЕННАЯ отправка уведомления админу
-        admin_msg = await bot.send_message(chat_id=ADMIN_ID, text=admin_text, reply_markup=admin_kb, parse_mode="Markdown")
+        # Мгновенное уведомление админа
+        admin_msg = await bot.send_message(
+            chat_id=ADMIN_ID, 
+            text=admin_text, 
+            reply_markup=admin_kb, 
+            parse_mode="Markdown"
+        )
         orders_db[order_id]["admin_msg_id"] = admin_msg.message_id
 
-        # Отправка карточки заказа клиенту
+        # Чек для клиента
         client_text = (
             f"🧁 **Заказ #{order_id}**\n\n"
             f"**Состав:**\n{items_text}\n\n"
-            f"💰 **Сумма:** {total_price} ₽\n\n"
+            f"💰 **Итого к оплате:** {total_price} ₽\n\n"
             f"Выберите способ оплаты 👇"
         )
         
@@ -120,9 +144,8 @@ async def web_app_data_handler(message: types.Message):
         await message.answer(client_text, reply_markup=client_kb, parse_mode="Markdown")
 
     except Exception as e:
-        print(f"Ошибка при обработке заказа: {e}")
+        logging.error(f"Ошибка парсинга: {e}", exc_info=True)
         await message.answer("❌ Произошла ошибка при формировании заказа. Пожалуйста, обратитесь в поддержку.")
-
 
 @dp.callback_query(F.data.startswith("pay_sbp_"))
 async def process_sbp_payment(callback: types.CallbackQuery):
@@ -130,9 +153,9 @@ async def process_sbp_payment(callback: types.CallbackQuery):
     order_data = orders_db.get(order_id)
     
     if not order_data:
-        return await callback.answer("Сессия заказа не найдена.", show_alert=True)
+        return await callback.answer("Сессия заказа не найдена или истекла.", show_alert=True)
     
-    total_price = order_data["total_price"]
+    total_price = order_data.get("total_price", 0)
     text = (
         f"💳 **Оплата заказа #{order_id} через СБП**\n\n"
         f"💰 Сумма к переводу: {total_price} ₽\n"
@@ -141,7 +164,7 @@ async def process_sbp_payment(callback: types.CallbackQuery):
         f"👤 Получатель: {SBP_RECEIVER}\n\n"
         f"Инструкция:\n"
         f"1. Скопируйте номер телефона и переведите {total_price} ₽ в приложении своего банка по СБП.\n"
-        f"2. После перевода нажмите кнопку «✅ Я оплатил(а)» ниже. Кондитер сверит поступление и подтвердит заказ! ✨"
+        f"2. После перевода нажмите кнопку «✅ Я оплатил(а)» ниже."
     )
     
     kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -151,7 +174,6 @@ async def process_sbp_payment(callback: types.CallbackQuery):
     await callback.message.edit_text(text, reply_markup=kb, parse_mode="Markdown")
     await callback.answer()
 
-
 @dp.callback_query(F.data.startswith("sbp_done_"))
 async def process_sbp_done(callback: types.CallbackQuery):
     order_id = callback.data.replace("sbp_done_", "")
@@ -160,11 +182,17 @@ async def process_sbp_done(callback: types.CallbackQuery):
     if not order_data:
         return await callback.answer("Сессия заказа не найдена.", show_alert=True)
         
-    await callback.message.edit_text("⏳ Платеж на проверке! Мы уже сверяем поступление средств. Курьер / Служба заботы свяжется с вами для подтверждения доставки ✨")
+    await callback.message.edit_text(
+        "⏳ Платеж на проверке! Мы уже сверяем поступление средств. "
+        "Курьер / Служба заботы свяжется с вами для подтверждения доставки ✨"
+    )
     
     if order_data.get("admin_msg_id"):
         new_status = "⚠️ Клиент заявил об оплате по СБП! Проверьте выписку банка"
-        new_text = order_data["admin_text"].replace("⏳ Статус: Ожидает выбора способа оплаты клиентом", f"⏳ Статус: {new_status}")
+        new_text = order_data["admin_text"].replace(
+            "⏳ Статус: Ожидает выбора способа оплаты клиентом", 
+            f"⏳ Статус: {new_status}"
+        )
         orders_db[order_id]["admin_text"] = new_text
         
         admin_kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -174,13 +202,17 @@ async def process_sbp_done(callback: types.CallbackQuery):
         ])
         
         try:
-            await bot.edit_message_text(chat_id=ADMIN_ID, message_id=order_data["admin_msg_id"], text=new_text, reply_markup=admin_kb, parse_mode="Markdown")
+            await bot.edit_message_text(
+                chat_id=ADMIN_ID, 
+                message_id=order_data["admin_msg_id"], 
+                text=new_text, 
+                reply_markup=admin_kb, 
+                parse_mode="Markdown"
+            )
         except Exception as e:
-            print(f"Ошибка обновления сообщения админа: {e}")
-            await bot.send_message(chat_id=ADMIN_ID, text=f"Заказ #{order_id}: {new_status}")
+            logging.error(f"Ошибка обновления сообщения админа: {e}", exc_info=True)
             
     await callback.answer()
-
 
 @dp.callback_query(F.data.startswith("pay_cash_"))
 async def process_cash_payment(callback: types.CallbackQuery):
@@ -190,11 +222,17 @@ async def process_cash_payment(callback: types.CallbackQuery):
     if not order_data:
         return await callback.answer("Сессия заказа не найдена.", show_alert=True)
         
-    await callback.message.edit_text("Заказ принят с оплатой при получении! Курьер свяжется с вами перед доставкой ✨")
+    await callback.message.edit_text(
+        "Заказ принят с оплатой при получении! "
+        "Курьер / Служба заботы свяжется с вами для подтверждения доставки ✨"
+    )
     
     if order_data.get("admin_msg_id"):
         new_status = "💵 Способ оплаты изменен клиентом на: Наличными при получении"
-        new_text = order_data["admin_text"].replace("⏳ Статус: Ожидает выбора способа оплаты клиентом", f"⏳ Статус: {new_status}")
+        new_text = order_data["admin_text"].replace(
+            "⏳ Статус: Ожидает выбора способа оплаты клиентом", 
+            f"⏳ Статус: {new_status}"
+        )
         orders_db[order_id]["admin_text"] = new_text
         
         admin_kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -204,17 +242,22 @@ async def process_cash_payment(callback: types.CallbackQuery):
         ])
         
         try:
-            await bot.edit_message_text(chat_id=ADMIN_ID, message_id=order_data["admin_msg_id"], text=new_text, reply_markup=admin_kb, parse_mode="Markdown")
+            await bot.edit_message_text(
+                chat_id=ADMIN_ID, 
+                message_id=order_data["admin_msg_id"], 
+                text=new_text, 
+                reply_markup=admin_kb, 
+                parse_mode="Markdown"
+            )
         except Exception as e:
-            print(f"Ошибка обновления сообщения админа: {e}")
+            logging.error(f"Ошибка обновления сообщения админа: {e}", exc_info=True)
             
     await callback.answer()
-
 
 @dp.callback_query(F.data.startswith("adm_confirm_"))
 async def admin_confirm(callback: types.CallbackQuery):
     if callback.from_user.id != ADMIN_ID:
-        return await callback.answer("У вас нет прав.", show_alert=True)
+        return await callback.answer("У вас нет прав для выполнения этого действия.", show_alert=True)
         
     order_id = callback.data.replace("adm_confirm_", "")
     order_data = orders_db.get(order_id)
@@ -228,15 +271,14 @@ async def admin_confirm(callback: types.CallbackQuery):
                 text=f"🎉 Оплата подтверждена! Ваш заказ #{order_id} принят в работу, десерты приедут в субботу ✨"
             )
         except Exception as e:
-            print(f"Не удалось отправить уведомление клиенту: {e}")
+            logging.error(f"Не удалось отправить уведомление клиенту: {e}", exc_info=True)
             
     await callback.answer()
-
 
 @dp.callback_query(F.data.startswith("adm_reject_"))
 async def admin_reject(callback: types.CallbackQuery):
     if callback.from_user.id != ADMIN_ID:
-        return await callback.answer("У вас нет прав.", show_alert=True)
+        return await callback.answer("У вас нет прав для выполнения этого действия.", show_alert=True)
         
     order_id = callback.data.replace("adm_reject_", "")
     order_data = orders_db.get(order_id)
@@ -254,13 +296,13 @@ async def admin_reject(callback: types.CallbackQuery):
                 reply_markup=kb
             )
         except Exception as e:
-            print(f"Не удалось отправить уведомление клиенту: {e}")
+            logging.error(f"Не удалось отправить уведомление клиенту: {e}", exc_info=True)
             
     await callback.answer()
 
-
 async def main():
-    print("Бот SweetSpot запущен. Бэкенд с мгновенным откликом администратору готов к работе!")
+    logging.info("Бот SweetSpot запущен. Сверхбезопасный парсинг активен.")
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
