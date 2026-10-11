@@ -2,6 +2,7 @@ import asyncio
 import json
 import uuid
 import logging
+import traceback
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import CommandStart
 from aiogram.types import (
@@ -45,6 +46,7 @@ async def command_start_handler(message: types.Message):
     )
     await message.answer(text, reply_markup=reply_kb)
     await message.answer("Для связи с нами используйте кнопку ниже:", reply_markup=inline_kb)
+
 
 @dp.message(F.web_app_data)
 async def web_app_data_handler(message: types.Message):
@@ -119,7 +121,7 @@ async def web_app_data_handler(message: types.Message):
             [InlineKeyboardButton(text="💬 Написать клиенту", url=contact_url)]
         ])
 
-        # Мгновенное уведомление админа
+        # МГНОВЕННОЕ УВЕДОМЛЕНИЕ АДМИНА
         admin_msg = await bot.send_message(
             chat_id=ADMIN_ID, 
             text=admin_text, 
@@ -128,7 +130,7 @@ async def web_app_data_handler(message: types.Message):
         )
         orders_db[order_id]["admin_msg_id"] = admin_msg.message_id
 
-        # Чек для клиента
+        # ЧЕК ДЛЯ КЛИЕНТА
         client_text = (
             f"🧁 **Заказ #{order_id}**\n\n"
             f"**Состав:**\n{items_text}\n\n"
@@ -144,8 +146,18 @@ async def web_app_data_handler(message: types.Message):
         await message.answer(client_text, reply_markup=client_kb, parse_mode="Markdown")
 
     except Exception as e:
-        logging.error(f"Ошибка парсинга: {e}", exc_info=True)
-        await message.answer("❌ Произошла ошибка при формировании заказа. Пожалуйста, обратитесь в поддержку.")
+        raw_data = getattr(message.web_app_data, 'data', 'Нет данных')
+        error_text = f"❌ ОШИБКА В БОТЕ:\n`{str(e)}`\n\n**Трейсбек:**\n`{traceback.format_exc()}`\n\n**Сырой JSON от фронтенда:**\n`{raw_data}`"
+        
+        # Обрезаем текст до лимитов Telegram, если JSON оказался слишком огромным
+        if len(error_text) > 4000:
+            error_text = error_text[:4000] + "\n\n...[ОБРЕЗАНО]"
+            
+        await message.answer(error_text, parse_mode="Markdown")
+        if message.from_user.id != ADMIN_ID:
+            await bot.send_message(chat_id=ADMIN_ID, text=error_text, parse_mode="Markdown")
+        return
+
 
 @dp.callback_query(F.data.startswith("pay_sbp_"))
 async def process_sbp_payment(callback: types.CallbackQuery):
@@ -173,6 +185,7 @@ async def process_sbp_payment(callback: types.CallbackQuery):
     
     await callback.message.edit_text(text, reply_markup=kb, parse_mode="Markdown")
     await callback.answer()
+
 
 @dp.callback_query(F.data.startswith("sbp_done_"))
 async def process_sbp_done(callback: types.CallbackQuery):
@@ -214,6 +227,7 @@ async def process_sbp_done(callback: types.CallbackQuery):
             
     await callback.answer()
 
+
 @dp.callback_query(F.data.startswith("pay_cash_"))
 async def process_cash_payment(callback: types.CallbackQuery):
     order_id = callback.data.replace("pay_cash_", "")
@@ -228,7 +242,7 @@ async def process_cash_payment(callback: types.CallbackQuery):
     )
     
     if order_data.get("admin_msg_id"):
-        new_status = "💵 Способ оплаты изменен клиентом на: Наличными при получении"
+        new_status = "💵 Оплата наличными при получении"
         new_text = order_data["admin_text"].replace(
             "⏳ Статус: Ожидает выбора способа оплаты клиентом", 
             f"⏳ Статус: {new_status}"
@@ -254,6 +268,7 @@ async def process_cash_payment(callback: types.CallbackQuery):
             
     await callback.answer()
 
+
 @dp.callback_query(F.data.startswith("adm_confirm_"))
 async def admin_confirm(callback: types.CallbackQuery):
     if callback.from_user.id != ADMIN_ID:
@@ -274,6 +289,7 @@ async def admin_confirm(callback: types.CallbackQuery):
             logging.error(f"Не удалось отправить уведомление клиенту: {e}", exc_info=True)
             
     await callback.answer()
+
 
 @dp.callback_query(F.data.startswith("adm_reject_"))
 async def admin_reject(callback: types.CallbackQuery):
@@ -300,8 +316,9 @@ async def admin_reject(callback: types.CallbackQuery):
             
     await callback.answer()
 
+
 async def main():
-    logging.info("Бот SweetSpot запущен. Сверхбезопасный парсинг активен.")
+    logging.info("Бот SweetSpot запущен. Мониторинг ошибок и сверхбезопасный парсинг активны.")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
