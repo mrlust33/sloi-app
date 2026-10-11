@@ -1,5 +1,4 @@
 const tg = window.Telegram?.WebApp;
-const WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=6.0";
 
 if(tg) {
     tg.expand();
@@ -258,7 +257,6 @@ function renderCartSheet(totalPrice, totalCount) {
         filledContent.style.display = 'none';
         emptyContent.style.setProperty('display', 'flex', 'important');
         headerBtn.style.display = 'none';
-        if(tg?.MainButton) tg.MainButton.hide();
         return;
     }
 
@@ -291,8 +289,6 @@ function renderCartSheet(totalPrice, totalCount) {
     document.getElementById('cart-subtotal').innerText = `${totalPrice} ₽`;
     document.getElementById('cart-grandtotal').innerText = `${totalPrice} ₽`;
     document.getElementById('checkout-total').innerText = `Сумма: ${totalPrice} ₽`;
-    
-    if(tg?.MainButton) tg.MainButton.setText(`Оплатить ${totalPrice} ₽`);
 }
 
 function clearCart(event) {
@@ -330,6 +326,15 @@ function openCartSheet() {
             totalCount += cart[id];
         }
     }
+
+    // Запускаем конфетти на открытии корзины, если в ней есть товары
+    if (totalCount > 0) {
+        confetti({
+            particleCount: 16, spread: 45, startVelocity: 18, scalar: 0.9, ticks: 60,
+            origin: { x: 0.5, y: 0.5 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
+        });
+    }
+
     renderCartSheet(totalPrice, totalCount);
 }
 
@@ -352,12 +357,6 @@ function goToCheckout() {
     
     document.getElementById('delivery-time-value').innerText = "Указать... 🕒";
     checkFormValidity();
-    
-    if(tg?.MainButton) {
-        tg.MainButton.color = "#1A1A1A"; 
-        tg.MainButton.show();
-        tg.MainButton.onClick(sendDataToBot);
-    }
 }
 
 function closeAllSheets() {
@@ -370,9 +369,9 @@ function closeAllSheets() {
     if (isCartBtnVisible) {
         gsap.to('#floating-cart-btn', { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.5)" });
     }
-    if(tg?.MainButton) tg.MainButton.hide();
 }
 
+// ================= ЖЕСТКАЯ ВАЛИДАЦИЯ ФОРМЫ =================
 function checkFormValidity() {
     const phoneInput = document.getElementById('phone');
     const streetInput = document.getElementById('street');
@@ -577,10 +576,10 @@ function initKeyboardHandling() {
         input.addEventListener('focus', (e) => {
             if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
             const sheet = document.getElementById('checkout-screen');
-            sheet.style.paddingBottom = '400px';
+            sheet.style.paddingBottom = '350px';
             setTimeout(() => {
                 e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 300);
+            }, 200);
         });
         
         input.addEventListener('blur', () => {
@@ -617,6 +616,7 @@ function initPhoneMask() {
     });
 }
 
+// ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН (УМНЫЙ РАСЧЕТ) =================
 function initPickerData() {
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const now = new Date();

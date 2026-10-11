@@ -14,7 +14,7 @@ from aiogram.types import (
 BOT_TOKEN = "8765647186:AAHSxInOny0IzDz5gRf83AX3wlszTRFgoXs"
 ADMIN_ID = 5293518524
 SUPPORT_LINK = "https://t.me"
-WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=8.0"
+WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=9.0"
 SBP_PHONE = "+7 (977) 627-44-42"
 SBP_BANK = "Т-Банк / Сбербанк"
 SBP_RECEIVER = "Андрей А."
@@ -218,7 +218,7 @@ async def send_admin_alert(order_id, data, tag):
     await bot.send_message(chat_id=ADMIN_ID, text=admin_alert, parse_mode="Markdown")
 
 async def main():
-    print("Бот SweetSpot запущен. Все фиксы активны!")
+    print("Бот SweetSpot запущен. Все модули активны!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
