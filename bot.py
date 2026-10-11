@@ -10,9 +10,9 @@ from aiogram.types import (
     WebAppInfo
 )
 
-BOT_TOKEN = "8765647186:AAHSxInOny0IzDz5gRf83AX3wlszTRFgoXs"
+BOT_TOKEN = "8765647186:AAGez9_BPRed47X2tp-QBc9MVERmxrOUkqk"
 ADMIN_ID = 5293518524
-SUPPORT_LINK = "https://t.me"
+SUPPORT_LINK = "tg://user?id=5293518524"
 WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=10.0"
 SBP_PHONE = "+7 (977) 627-44-42"
 SBP_BANK = "Т-Банк / Сбербанк"
