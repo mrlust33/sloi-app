@@ -1,4 +1,5 @@
 const tg = window.Telegram?.WebApp;
+const WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=10.0"; 
 
 if(tg) {
     tg.expand();
@@ -327,7 +328,6 @@ function openCartSheet() {
         }
     }
 
-    // Запускаем конфетти на открытии корзины, если в ней есть товары
     if (totalCount > 0) {
         confetti({
             particleCount: 16, spread: 45, startVelocity: 18, scalar: 0.9, ticks: 60,
@@ -575,16 +575,9 @@ function initKeyboardHandling() {
     document.querySelectorAll('#checkout-screen input, #checkout-screen textarea').forEach(input => {
         input.addEventListener('focus', (e) => {
             if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
-            const sheet = document.getElementById('checkout-screen');
-            sheet.style.paddingBottom = '350px';
             setTimeout(() => {
                 e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 200);
-        });
-        
-        input.addEventListener('blur', () => {
-            const sheet = document.getElementById('checkout-screen');
-            sheet.style.paddingBottom = '24px'; 
         });
     });
 }
@@ -722,18 +715,6 @@ function initPickerScroll() {
             }, 100);
         });
     });
-
-    const pickerModal = document.getElementById('picker-modal');
-    const pickerOverlay = document.getElementById('picker-overlay');
-    
-    const preventScroll = (e) => {
-        if (!e.target.closest('.picker-column')) {
-            e.preventDefault();
-        }
-    };
-    
-    if(pickerModal) pickerModal.addEventListener('touchmove', preventScroll, { passive: false });
-    if(pickerOverlay) pickerOverlay.addEventListener('touchmove', preventScroll, { passive: false });
 }
 
 function openPicker() {
@@ -742,9 +723,7 @@ function openPicker() {
     }
 
     document.body.classList.add('modal-active');
-    const checkoutSheet = document.getElementById('checkout-screen');
-    if (checkoutSheet) checkoutSheet.classList.add('modal-active');
-
+    
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     
     document.getElementById('picker-overlay').classList.add('active');
@@ -759,8 +738,6 @@ function openPicker() {
 
 function closePickerAndSave() {
     document.body.classList.remove('modal-active');
-    const checkoutSheet = document.getElementById('checkout-screen');
-    if (checkoutSheet) checkoutSheet.classList.remove('modal-active');
 
     if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     
@@ -833,12 +810,3 @@ initFormValidation();
 document.querySelectorAll('.bottom-sheet').forEach(sheet => {
     sheet.classList.add('sheet-content-scroll');
 });
-
-const mainOverlay = document.getElementById('overlay');
-if (mainOverlay) {
-    mainOverlay.addEventListener('touchmove', (e) => {
-        if (!e.target.closest('.sheet-content-scroll')) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-}
