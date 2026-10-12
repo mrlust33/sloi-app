@@ -1,5 +1,8 @@
 const tg = window.Telegram?.WebApp;
 
+// Вычисляем жесткую пиксельную высоту экрана при старте для изоляции скролла
+const appHeight = window.innerHeight;
+
 if(tg) {
     tg.ready();
     tg.expand();
@@ -8,7 +11,7 @@ if(tg) {
     }
 }
 
-// Обновленный массив товаров с новыми ценами
+// Актуализированный каталог (включает 1100 руб за хит)
 const products = [
     { 
         id: 1, 
@@ -102,9 +105,20 @@ function renderProducts() {
     });
 }
 
+function setSheetHeight(sheetElement) {
+    if(sheetElement) {
+        const fixedHeight = Math.floor(appHeight * 0.85);
+        sheetElement.style.height = fixedHeight + 'px';
+        sheetElement.style.maxHeight = fixedHeight + 'px';
+    }
+}
+
 function openProductInfo(id) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     document.body.classList.add('modal-active');
+    
+    const sheet = document.getElementById('product-info-screen');
+    setSheetHeight(sheet);
     
     const p = products.find(prod => prod.id === id);
     if(!p) return;
@@ -121,8 +135,8 @@ function openProductInfo(id) {
     addBtn.onclick = (e) => addFromInfoSheet(e, p.id);
 
     document.getElementById('overlay').classList.add('active');
-    document.getElementById('product-info-screen').classList.add('active');
-    gsap.set('#product-info-screen', { y: 0 });
+    sheet.classList.add('active');
+    gsap.set(sheet, { clearProps: "transform" });
 }
 
 function addFromInfoSheet(event, id) {
@@ -156,9 +170,7 @@ function addFromInfoSheet(event, id) {
     
     const infoSheet = document.getElementById('product-info-screen');
     infoSheet.classList.remove('active');
-    gsap.to(infoSheet, { y: "100%", duration: 0.3, ease: "power2.out", onComplete: () => {
-        closeAllSheets();
-    }});
+    closeAllSheets();
 }
 
 function handleFirstAdd(event, id) {
@@ -315,9 +327,12 @@ function clearCart(event) {
 
 function openCartSheet() {
     document.body.classList.add('modal-active');
+    
+    const sheet = document.getElementById('cart-screen');
+    setSheetHeight(sheet);
+    
     document.getElementById('overlay').classList.add('active');
-    document.getElementById('cart-screen').classList.add('active');
-    gsap.set('#cart-screen', { y: 0 }); 
+    sheet.classList.add('active');
     gsap.to('#floating-cart-btn', { y: 100, opacity: 0, duration: 0.3 });
     
     let totalPrice = 0;
@@ -345,16 +360,17 @@ function closeCartWithHaptic() {
     }
     const cartSheet = document.getElementById('cart-screen');
     cartSheet.classList.remove('active');
-    gsap.to(cartSheet, { y: "100%", duration: 0.4, ease: "power2.inOut", onComplete: () => {
-        closeAllSheets();
-    }});
+    closeAllSheets();
 }
 
 function goToCheckout() {
     document.body.classList.add('modal-active');
     document.getElementById('cart-screen').classList.remove('active');
-    document.getElementById('checkout-screen').classList.add('active');
-    gsap.set('#checkout-screen', { y: 0 });
+    
+    const checkoutSheet = document.getElementById('checkout-screen');
+    setSheetHeight(checkoutSheet);
+    
+    checkoutSheet.classList.add('active');
     
     document.getElementById('delivery-time-value').innerText = "Указать... 🕒";
     checkFormValidity();
@@ -575,15 +591,7 @@ function initKeyboardHandling() {
         }
     });
 
-    // ПЛАВНОЕ ПОВЕДЕНИЕ КЛАВИАТУРЫ: Устранение дергания через setTimeout и block: 'nearest'
-    document.querySelectorAll('#checkout-screen input, #checkout-screen textarea').forEach(input => {
-        input.addEventListener('focus', (e) => {
-            if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
-            setTimeout(() => {
-                e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 300);
-        });
-    });
+    // Строго удален scrollIntoView для нативного фокуса без конфликтов
 }
 
 function initPhoneMask() {
@@ -613,7 +621,6 @@ function initPhoneMask() {
     });
 }
 
-// ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН (УМНЫЙ РАСЧЕТ) =================
 function initPickerData() {
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const now = new Date();

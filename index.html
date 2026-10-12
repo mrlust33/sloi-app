@@ -14,12 +14,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=22.0">
+    <link rel="stylesheet" href="style.css?v=23.0">
     <style>
-        /* Изоляция скролла и плавность шторки */
+        /* Изоляция скролла */
         body.modal-active { overflow: hidden !important; position: fixed; width: 100%; height: 100%; touch-action: none; }
-        .bottom-sheet { transition: padding-bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-        .bottom-sheet.active { max-height: 85vh !important; overflow-y: auto !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important; }
+        
+        /* Жесткая шторка без vh, высота будет задана через JS в пикселях */
+        .bottom-sheet { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(14px); border-radius: 24px 24px 0 0; overflow-y: auto !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important; transition: transform 0.3s ease; transform: translateY(100%); z-index: 1000; }
+        .bottom-sheet.active { transform: translateY(0); }
         
         /* Плашка Telegram-аккаунта */
         .tg-account-info { color: #10b981; font-weight: 600; font-size: 15px; padding: 16px; background: #ffffff; border-radius: 12px; border: 1.5px solid #10b981; font-family: 'Inter', sans-serif; display: none; margin-bottom: 12px;}
@@ -39,11 +41,10 @@
             <h1 class="brand-title">SweetSpot</h1>
             <p id="sweet-subtitle">Ваш сладкий момент на сегодня ✨</p>
         </div>
-        <!-- Каталог рендерится через JS с учетом новых стилей и цен -->
+        <!-- Каталог рендерится через JS -->
         <div class="catalog" id="products-container"></div>
     </div>
 
-    <!-- Оверлей без preventDefault на скролл -->
     <div class="overlay" id="overlay" onclick="closeAllSheets()"></div>
 
     <!-- ШТОРКА 1: КОРЗИНА -->
@@ -154,6 +155,6 @@
         <button class="picker-done-btn-bottom" onclick="closePickerAndSave()">Готово</button>
     </div>
 
-    <script src="script.js?v=22.0"></script>
+    <script src="script.js?v=23.0"></script>
 </body>
 </html>
