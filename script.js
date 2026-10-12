@@ -1,5 +1,4 @@
 const tg = window.Telegram?.WebApp;
-const WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=10.0";
 
 if(tg) {
     tg.ready();
@@ -9,13 +8,14 @@ if(tg) {
     }
 }
 
+// Актуализированный каталог с новыми ценами и бейджем акции
 const products = [
     { 
         id: 1, 
         name: "Трайфл-кайфл «Клубника-банан»", 
         detailName: "Шоколадный бисквит с клубникой и бананом",
-        price: 1500, 
-        img: "banan.jpg",
+        price: 1250, 
+        img: "klubnika.jpg",
         desc: "Идеальное сочетание спелого банана и сладкой клубники. Мягкие слои шоколадного бисквита в тандеме с нежным кремом создают неповторимую легкость каждого кусочка.",
         layers: ["Воздушный шоколадный бисквит", "Нежный сливочный крем-чиз", "Кусочки спелого банана", "Ягодный мусс из спелой клубники"]
     },
@@ -23,8 +23,10 @@ const products = [
         id: 2, 
         name: "Трайфл-кайфл «Ванильный с клубникой»", 
         detailName: "Ванильный бисквит с клубникой",
-        price: 1500, 
-        img: "klubnika.jpg", 
+        price: 1100, 
+        oldPrice: 1250,
+        badge: "Хит продаж",
+        img: "banan.jpg", 
         desc: "Классическая нежность с ярким вкусом свежей клубники. Легкий ванильный бисквит тает во рту, уступая место натуральному ягодному конфитюру и сливочному суфле.",
         layers: ["Легкий ванильный бисквит", "Ванильно-сливочный суфле-мусс", "Свежая клубника в собственном соку", "Натуральный клубничный конфитюр"]
     },
@@ -32,7 +34,7 @@ const products = [
         id: 3, 
         name: "Трайфл-кайфл «Соленая карамель»", 
         detailName: "Шоколадный бисквит с бананом и карамелью",
-        price: 1500, 
+        price: 1250, 
         img: "vishny.jpg", 
         desc: "Утонченный десерт для любителей насыщенных вкусов. Терпкость темного шоколада превосходно оттеняется сладкой карамелью и спелым бананом.",
         layers: ["Насыщенный шоколадный брауни", "Тягучая соленая карамель", "Ломтики свежего банана", "Мусс из темного бельгийского шоколада"]
@@ -62,19 +64,26 @@ function initTelegramData() {
 
 function renderProducts() {
     const container = document.getElementById('products-container');
+    container.innerHTML = '';
     products.forEach((p, index) => {
         const card = document.createElement('div');
         card.className = 'product-card animate__animated animate__fadeInUp';
         card.style.animationDelay = `${index * 0.1}s`; 
         
+        let badgeHtml = p.badge ? `<div class="badge-hit">${p.badge}</div>` : '';
+        let priceHtml = p.oldPrice 
+            ? `<s>${p.oldPrice} ₽</s> <span style="color:#ff69b4; font-weight:800; font-size:1.1em; margin-left:4px;">${p.price} ₽</span>` 
+            : `${p.price} ₽`;
+            
         card.innerHTML = `
             <img src="${p.img}" class="product-image" alt="${p.name}">
             <div class="product-info-wrap">
+                ${badgeHtml}
                 <h3 class="product-title">${p.name}</h3>
                 <div class="product-controls">
                     <div class="product-price-about">
                         <button class="about-product-btn" onclick="openProductInfo(${p.id})">О десерте</button>
-                        <p class="product-price">${p.price} ₽</p>
+                        <p class="product-price">${priceHtml}</p>
                     </div>
                     <div class="action-container" id="control-${p.id}">
                         <button class="add-btn" id="btn-add-${p.id}" onclick="handleFirstAdd(event, ${p.id})">В корзину</button>
@@ -124,7 +133,7 @@ function addFromInfoSheet(event, id) {
 
     confetti({
         particleCount: 40, spread: 60, startVelocity: 18, scalar: 0.9, ticks: 60,
-        origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
+        origin: { x, y }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
     });
 
     if (!cart[id]) {
@@ -162,7 +171,7 @@ function handleFirstAdd(event, id) {
 
     confetti({
         particleCount: 40, spread: 60, startVelocity: 18, scalar: 0.9, ticks: 60,
-        origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
+        origin: { x, y }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
     });
 
     cart[id] = 1;
@@ -317,14 +326,6 @@ function openCartSheet() {
             totalCount += cart[id];
         }
     }
-
-    if (totalCount > 0) {
-        confetti({
-            particleCount: 40, spread: 60, startVelocity: 18, scalar: 0.9, ticks: 60,
-            origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
-        });
-    }
-
     renderCartSheet(totalPrice, totalCount);
 }
 
@@ -361,7 +362,6 @@ function closeAllSheets() {
     }
 }
 
-// ================= ЖЕСТКАЯ ВАЛИДАЦИЯ ФОРМЫ =================
 function checkFormValidity() {
     const phoneInput = document.getElementById('phone');
     const streetInput = document.getElementById('street');
@@ -422,6 +422,9 @@ function getNextDeliverySaturday() {
 function sendDataToBot() {
     const submitBtn = document.getElementById('submit-order-btn');
     if (submitBtn && submitBtn.disabled) return;
+
+    // Взрыв конфетти при успешном оформлении
+    confetti({ particleCount: 40, spread: 60, origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999 });
 
     const tgUser = tg?.initDataUnsafe?.user;
     
@@ -599,7 +602,6 @@ function initPhoneMask() {
     });
 }
 
-// ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН (УМНЫЙ РАСЧЕТ) =================
 function initPickerData() {
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const now = new Date();
@@ -790,5 +792,4 @@ initBottomSheetSwipe('cart-screen', 'drag-handle-cart');
 initBottomSheetSwipe('checkout-screen', 'drag-handle-checkout');
 initBottomSheetSwipe('product-info-screen', 'drag-handle-info');
 initKeyboardHandling();
-initEnterNavigation();
 initFormValidation();
