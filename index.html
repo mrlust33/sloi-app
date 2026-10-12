@@ -14,14 +14,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=21.0">
+    <link rel="stylesheet" href="style.css?v=22.0">
     <style>
-        /* Изоляция скролла */
+        /* Изоляция скролла и плавность шторки */
         body.modal-active { overflow: hidden !important; position: fixed; width: 100%; height: 100%; touch-action: none; }
-        
-        /* Жесткая пиксельная шторка, без относительных единиц высоты */
-        .bottom-sheet { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(14px); border-radius: 24px 24px 0 0; overflow-y: auto !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important; transition: transform 0.3s ease; transform: translateY(100%); z-index: 1000; }
-        .bottom-sheet.active { transform: translateY(0); }
+        .bottom-sheet { transition: padding-bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .bottom-sheet.active { max-height: 85vh !important; overflow-y: auto !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important; }
         
         /* Плашка Telegram-аккаунта */
         .tg-account-info { color: #10b981; font-weight: 600; font-size: 15px; padding: 16px; background: #ffffff; border-radius: 12px; border: 1.5px solid #10b981; font-family: 'Inter', sans-serif; display: none; margin-bottom: 12px;}
@@ -156,6 +154,6 @@
         <button class="picker-done-btn-bottom" onclick="closePickerAndSave()">Готово</button>
     </div>
 
-    <script src="script.js?v=21.0"></script>
+    <script src="script.js?v=22.0"></script>
 </body>
 </html>
