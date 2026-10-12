@@ -8,7 +8,7 @@ if(tg) {
     }
 }
 
-// Актуализированный каталог с новыми ценами и бейджем акции
+// Обновленный массив товаров с новыми ценами
 const products = [
     { 
         id: 1, 
@@ -72,13 +72,15 @@ function renderProducts() {
         
         let badgeHtml = p.badge ? `<div class="badge-hit">${p.badge}</div>` : '';
         let priceHtml = p.oldPrice 
-            ? `<s>${p.oldPrice} ₽</s> <span style="color:#ff69b4; font-weight:800; font-size:1.1em; margin-left:4px;">${p.price} ₽</span>` 
+            ? `<s>${p.oldPrice} ₽</s> <span class="price-new" style="margin-left:4px;">${p.price} ₽</span>` 
             : `${p.price} ₽`;
             
         card.innerHTML = `
-            <img src="${p.img}" class="product-image" alt="${p.name}">
-            <div class="product-info-wrap">
+            <div class="image-container">
                 ${badgeHtml}
+                <img src="${p.img}" alt="${p.name}">
+            </div>
+            <div class="product-info-wrap">
                 <h3 class="product-title">${p.name}</h3>
                 <div class="product-controls">
                     <div class="product-price-about">
@@ -271,7 +273,7 @@ function renderCartSheet(totalPrice, totalCount) {
             const p = products.find(p => p.id == id);
             list.innerHTML += `
                 <div class="cart-item">
-                    <img src="${p.img}" class="cart-item-img">
+                    <img src="${p.img}" class="cart-item-img" style="object-fit:cover; border-radius:8px;">
                     <div class="cart-item-info">
                         <div class="cart-item-title">${p.name}</div>
                         <div class="cart-item-price">${p.price} ₽</div>
@@ -326,6 +328,14 @@ function openCartSheet() {
             totalCount += cart[id];
         }
     }
+
+    if (totalCount > 0) {
+        confetti({
+            particleCount: 40, spread: 60, startVelocity: 18, scalar: 0.9, ticks: 60,
+            origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999
+        });
+    }
+
     renderCartSheet(totalPrice, totalCount);
 }
 
@@ -424,7 +434,7 @@ function sendDataToBot() {
     if (submitBtn && submitBtn.disabled) return;
 
     // Взрыв конфетти при успешном оформлении
-    confetti({ particleCount: 40, spread: 60, origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999 });
+    confetti({ particleCount: 60, spread: 80, origin: { y: 0.85 }, colors: ['#FFD700', '#FFA500', '#FF69B4', '#FFFFFF'], shapes: ['star', 'circle'], zIndex: 9999 });
 
     const tgUser = tg?.initDataUnsafe?.user;
     
