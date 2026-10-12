@@ -16,8 +16,9 @@
     
     <link rel="stylesheet" href="style.css?v=11.0">
     <style>
-        /* Изоляция скролла */
+        /* Изоляция скролла и плавность шторки */
         body.modal-active { overflow: hidden !important; position: fixed; width: 100%; height: 100%; touch-action: none; }
+        .bottom-sheet { transition: padding-bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
         .bottom-sheet.active { max-height: 85vh !important; overflow-y: auto !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important; }
         
         /* Плашка Telegram-аккаунта */

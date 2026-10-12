@@ -575,12 +575,13 @@ function initKeyboardHandling() {
         }
     });
 
+    // ПЛАВНОЕ ПОВЕДЕНИЕ КЛАВИАТУРЫ: Устранение дергания через setTimeout и block: 'nearest'
     document.querySelectorAll('#checkout-screen input, #checkout-screen textarea').forEach(input => {
         input.addEventListener('focus', (e) => {
             if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
             setTimeout(() => {
-                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 200);
+                e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 300);
         });
     });
 }
@@ -612,6 +613,7 @@ function initPhoneMask() {
     });
 }
 
+// ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН (УМНЫЙ РАСЧЕТ) =================
 function initPickerData() {
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const now = new Date();
