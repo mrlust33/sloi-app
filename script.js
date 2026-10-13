@@ -1,7 +1,7 @@
 const tg = window.Telegram?.WebApp;
+const appHeight = window.innerHeight; // Вычисляем точную высоту экрана при старте приложения
 
-// Вычисляем жесткую пиксельную высоту экрана при старте для изоляции скролла
-const appHeight = window.innerHeight;
+const WEB_APP_URL = "https://mrlust33.github.io/sloi-app/?v=12.0";
 
 if(tg) {
     tg.ready();
@@ -105,20 +105,14 @@ function renderProducts() {
     });
 }
 
-function setSheetHeight(sheetElement) {
-    if(sheetElement) {
-        const fixedHeight = Math.floor(appHeight * 0.85);
-        sheetElement.style.height = fixedHeight + 'px';
-        sheetElement.style.maxHeight = fixedHeight + 'px';
-    }
-}
-
 function openProductInfo(id) {
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     document.body.classList.add('modal-active');
     
     const sheet = document.getElementById('product-info-screen');
-    setSheetHeight(sheet);
+    // Жесткая пиксельная фиксация высоты шторки О ТОВАРЕ
+    sheet.style.height = (appHeight * 0.85) + 'px';
+    sheet.style.maxHeight = (appHeight * 0.85) + 'px';
     
     const p = products.find(prod => prod.id === id);
     if(!p) return;
@@ -329,7 +323,9 @@ function openCartSheet() {
     document.body.classList.add('modal-active');
     
     const sheet = document.getElementById('cart-screen');
-    setSheetHeight(sheet);
+    // Жесткая пиксельная фиксация высоты шторки КОРЗИНЫ
+    sheet.style.height = (appHeight * 0.85) + 'px';
+    sheet.style.maxHeight = (appHeight * 0.85) + 'px';
     
     document.getElementById('overlay').classList.add('active');
     sheet.classList.add('active');
@@ -368,7 +364,9 @@ function goToCheckout() {
     document.getElementById('cart-screen').classList.remove('active');
     
     const checkoutSheet = document.getElementById('checkout-screen');
-    setSheetHeight(checkoutSheet);
+    // Жесткая пиксельная фиксация высоты шторки ОФОРМЛЕНИЯ ЗАКАЗА
+    checkoutSheet.style.height = (appHeight * 0.85) + 'px';
+    checkoutSheet.style.maxHeight = (appHeight * 0.85) + 'px';
     
     checkoutSheet.classList.add('active');
     
@@ -591,7 +589,13 @@ function initKeyboardHandling() {
         }
     });
 
-    // Строго удален scrollIntoView для нативного фокуса без конфликтов
+    // ПОЛНОСТЬЮ ВЫРЕЗАН метод scrollIntoView для нативного фокуса без конфликтов
+    document.querySelectorAll('#checkout-screen input, #checkout-screen textarea').forEach(input => {
+        input.addEventListener('focus', (e) => {
+            if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
+            // Оставляем чистый нативный фокус браузера
+        });
+    });
 }
 
 function initPhoneMask() {
@@ -621,6 +625,7 @@ function initPhoneMask() {
     });
 }
 
+// ================= ЦЕНТРИРОВАННЫЙ iOS POP-UP БАРАБАН (УМНЫЙ РАСЧЕТ) =================
 function initPickerData() {
     const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const now = new Date();
