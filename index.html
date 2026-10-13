@@ -14,7 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=23.0">
+    <link rel="stylesheet" href="style.css?v=24.0">
     <style>
         /* Изоляция скролла */
         body.modal-active { overflow: hidden !important; position: fixed; width: 100%; height: 100%; touch-action: none; }
@@ -32,6 +32,25 @@
         .image-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .badge-hit { position: absolute; top: 12px; left: 12px; background: #ff69b4; color: #ffffff; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
         .price-new { color: #1e1611 !important; font-weight: 800; }
+
+        /* =========================================================
+           ИСПРАВЛЕНИЕ БАГА Z-INDEX ДЛЯ ВЫБОРА ВРЕМЕНИ И ЦИФЕРБЛАТА 
+           ========================================================= */
+        select, 
+        input[type="time"], 
+        input[type="date"], 
+        .delivery-time-trigger {
+            position: relative !important; 
+            z-index: 999999 !important;
+        }
+
+        /* Вывод кастомного iOS-барабана (модалки) поверх шторки оформления */
+        .picker-overlay {
+            z-index: 999998 !important;
+        }
+        .picker-modal {
+            z-index: 999999 !important;
+        }
     </style>
 </head>
 <body>
@@ -41,10 +60,11 @@
             <h1 class="brand-title">SweetSpot</h1>
             <p id="sweet-subtitle">Ваш сладкий момент на сегодня ✨</p>
         </div>
-        <!-- Каталог рендерится через JS -->
+        <!-- Каталог рендерится через JS с учетом новых стилей и цен -->
         <div class="catalog" id="products-container"></div>
     </div>
 
+    <!-- Оверлей без preventDefault на скролл -->
     <div class="overlay" id="overlay" onclick="closeAllSheets()"></div>
 
     <!-- ШТОРКА 1: КОРЗИНА -->
@@ -155,6 +175,6 @@
         <button class="picker-done-btn-bottom" onclick="closePickerAndSave()">Готово</button>
     </div>
 
-    <script src="script.js?v=23.0"></script>
+    <script src="script.js?v=24.0"></script>
 </body>
 </html>
